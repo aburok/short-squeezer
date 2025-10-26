@@ -1,16 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-
-// Simple test component
-const TestComponent = () => {
-  return (
-    <div style={{ padding: '20px', backgroundColor: '#f0f0f0', margin: '20px' }}>
-      <h2>React is working!</h2>
-      <p>If you can see this, React has mounted successfully.</p>
-      <p>Current time: {new Date().toLocaleString()}</p>
-    </div>
-  );
-};
+import Dashboard from './components/Dashboard';
 
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,18 +10,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashboardContainer = document.getElementById('dashboard-container');
   
   if (dashboardContainer) {
-    console.log('Found dashboard container, mounting React...');
+    console.log('Found dashboard container, mounting React Dashboard...');
     
     try {
       // Create a root for React to render into
       const dashboardRoot = createRoot(dashboardContainer);
       
-      // Render the test component
-      dashboardRoot.render(<TestComponent />);
+      // Render the Dashboard component
+      dashboardRoot.render(<Dashboard />);
       
-      console.log('React mounted successfully!');
+      console.log('React Dashboard mounted successfully!');
     } catch (error) {
-      console.error('Error mounting React:', error);
+      console.error('Error mounting React Dashboard:', error);
     }
   } else {
     console.error('Dashboard container not found!');

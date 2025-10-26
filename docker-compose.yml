@@ -8,6 +8,8 @@ services:
       SA_PASSWORD: "StrongPassword123!"
       ACCEPT_EULA: "Y"
     user: root
+    ports:
+      - "1433:1433"
     healthcheck:
       test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" || exit 1
       interval: 10s
@@ -27,7 +29,6 @@ services:
       - "443:443"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StockDataDb;User Id=sa;Password=StrongPassword123!;TrustServerCertificate=True;
       - AlphaVantage__ApiKey=demo
     depends_on:
       sqlserver:
@@ -42,7 +43,6 @@ services:
       dockerfile: src/StockDataWorker/Dockerfile
     environment:
       - DOTNET_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StockDataDb;User Id=sa;Password=StrongPassword123!;TrustServerCertificate=True;
       - AlphaVantage__ApiKey=demo
     depends_on:
       sqlserver:
