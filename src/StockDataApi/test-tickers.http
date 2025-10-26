@@ -1,0 +1,17 @@
+@baseUrl = http://192.168.200.2:80
+
+### Get all tickers
+GET {{baseUrl}}/api/tickers
+Accept: application/json
+
+### Get a specific ticker
+GET {{baseUrl}}/api/tickers/AAPL
+Accept: application/json
+
+### Refresh data for a specific ticker
+POST {{baseUrl}}/api/tickers/refresh/AAPL?exchange=nasdaq
+Accept: application/json
+
+### Refresh all tickers from exchanges
+POST {{baseUrl}}/api/tickers/refresh-all
+Accept: application/json

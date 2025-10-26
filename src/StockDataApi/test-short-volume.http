@@ -1,0 +1,8 @@
+### Get short volume data for BYND
+GET http://localhost:80/api/ShortVolume/BYND
+
+### Get latest short volume data for BYND
+GET http://localhost:80/api/ShortVolume/BYND/latest
+
+### Refresh short volume data for BYND from Chart Exchange
+POST http://localhost:80/api/ShortVolume/refresh/BYND

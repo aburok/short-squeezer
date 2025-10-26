@@ -1,0 +1,8 @@
+### Get short interest data for SPY
+GET http://localhost:80/api/ShortInterest/SPY
+
+### Get latest short interest data for SPY
+GET http://localhost:80/api/ShortInterest/SPY/latest
+
+### Refresh short interest data for SPY from Chart Exchange
+POST http://localhost:80/api/ShortInterest/refresh/spy

@@ -1,0 +1,279 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using StockDataLib.Data;
+using StockDataLib.Models;
+using StockDataLib.Services;
+
+namespace StockDataWorker.Services
+{
+    public class DataFetcherService
+    {
+        private readonly ILogger<DataFetcherService> _logger;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly DataFetcherOptions _options;
+        private readonly IChartExchangeService _chartExchangeService;
+        private readonly IAlphaVantageService _alphaVantageService;
+
+        public DataFetcherService(
+            ILogger<DataFetcherService> logger,
+            IServiceProvider serviceProvider,
+            IOptions<DataFetcherOptions> options,
+            IChartExchangeService chartExchangeService,
+            IAlphaVantageService alphaVantageService)
+        {
+            _logger = logger;
+            _serviceProvider = serviceProvider;
+            _options = options.Value;
+            _chartExchangeService = chartExchangeService;
+            _alphaVantageService = alphaVantageService;
+        }
+
+        /// <summary>
+        /// Fetches all data for all tickers
+        /// </summary>
+        public async Task FetchAllDataAsync(CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Starting data fetch process at: {time}", DateTimeOffset.Now);
+
+            try
+            {
+                await FetchDataForAllTickersAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching data");
+            }
+
+            _logger.LogInformation("Data fetch process completed at: {time}", DateTimeOffset.Now);
+        }
+
+        private async Task FetchDataForAllTickersAsync(CancellationToken stoppingToken)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<StockDataContext>();
+
+            // Get all tickers from the database
+            var tickers = await dbContext.StockTickers.ToListAsync(stoppingToken);
+
+            // If no tickers exist, add the default ones
+            if (!tickers.Any())
+            {
+                _logger.LogInformation("No tickers found in database. Adding default tickers.");
+                tickers = await AddDefaultTickersAsync(dbContext, stoppingToken);
+            }
+
+            // Process each ticker
+            foreach (var ticker in tickers)
+            {
+                if (stoppingToken.IsCancellationRequested)
+                    break;
+
+                _logger.LogInformation("Fetching data for {Symbol} on {Exchange}", ticker.Symbol, ticker.Exchange);
+
+                try
+                {
+                    // Fetch borrow fee data
+                    if (_options.EnableBorrowFeeDataFetching)
+                    {
+                        await FetchBorrowFeeDataAsync(dbContext, ticker, stoppingToken);
+                    }
+
+                    // Fetch price data
+                    if (_options.EnablePriceDataFetching)
+                    {
+                        await FetchPriceDataAsync(dbContext, ticker, stoppingToken);
+                    }
+
+                    // Update the last updated timestamp
+                    ticker.LastUpdated = DateTime.UtcNow;
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error fetching data for {Symbol}", ticker.Symbol);
+                }
+
+                // Add a delay between requests to avoid overwhelming the server
+                await Task.Delay(TimeSpan.FromSeconds(_options.DelayBetweenRequestsSeconds), stoppingToken);
+            }
+        }
+
+        private async Task FetchBorrowFeeDataAsync(StockDataContext dbContext, StockTicker ticker, CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Fetching borrow fee data for {Symbol}", ticker.Symbol);
+            
+            try
+            {
+                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(ticker.Symbol, ticker.Exchange);
+                
+                if (borrowFeeData.Any())
+                {
+                    await UpdateBorrowFeeDataAsync(dbContext, ticker.Id, borrowFeeData, stoppingToken);
+                    _logger.LogInformation("Successfully updated borrow fee data for {Symbol}", ticker.Symbol);
+                }
+                else
+                {
+                    _logger.LogWarning("No borrow fee data found for {Symbol}", ticker.Symbol);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching borrow fee data for {Symbol}", ticker.Symbol);
+            }
+        }
+
+        private async Task FetchPriceDataAsync(StockDataContext dbContext, StockTicker ticker, CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Fetching price data for {Symbol}", ticker.Symbol);
+            
+            try
+            {
+                var priceData = await _alphaVantageService.GetDailyPriceDataAsync(ticker.Symbol);
+                
+                if (priceData.Any())
+                {
+                    await UpdatePriceDataAsync(dbContext, ticker.Id, priceData, stoppingToken);
+                    _logger.LogInformation("Successfully updated price data for {Symbol}", ticker.Symbol);
+                }
+                else
+                {
+                    _logger.LogWarning("No price data found for {Symbol}", ticker.Symbol);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching price data for {Symbol}", ticker.Symbol);
+            }
+        }
+
+        private async Task<List<StockTicker>> AddDefaultTickersAsync(StockDataContext dbContext, CancellationToken stoppingToken)
+        {
+            var defaultTickers = new List<StockTicker>
+            {
+                new StockTicker { Symbol = "GME", Exchange = "nyse", Name = "GameStop Corp.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "AAPL", Exchange = "nasdaq", Name = "Apple Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "TSLA", Exchange = "nasdaq", Name = "Tesla, Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "AMC", Exchange = "nyse", Name = "AMC Entertainment Holdings, Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "MSFT", Exchange = "nasdaq", Name = "Microsoft Corporation", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "AMZN", Exchange = "nasdaq", Name = "Amazon.com, Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "GOOGL", Exchange = "nasdaq", Name = "Alphabet Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "META", Exchange = "nasdaq", Name = "Meta Platforms, Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "NFLX", Exchange = "nasdaq", Name = "Netflix, Inc.", LastUpdated = DateTime.UtcNow },
+                new StockTicker { Symbol = "BYND", Exchange = "nasdaq", Name = "Beyond Meat, Inc.", LastUpdated = DateTime.UtcNow }
+            };
+
+            dbContext.StockTickers.AddRange(defaultTickers);
+            await dbContext.SaveChangesAsync(stoppingToken);
+            
+            _logger.LogInformation("Added {Count} default tickers to the database", defaultTickers.Count);
+            
+            return defaultTickers;
+        }
+
+        private async Task UpdateBorrowFeeDataAsync(
+            StockDataContext dbContext, 
+            int tickerId, 
+            List<BorrowFeeData> newData, 
+            CancellationToken stoppingToken)
+        {
+            // Get existing data for this ticker
+            var existingData = await dbContext.BorrowFeeData
+                .Where(d => d.StockTickerId == tickerId)
+                .ToDictionaryAsync(d => d.Date.Date, d => d, stoppingToken);
+
+            // Process new data
+            foreach (var dataPoint in newData)
+            {
+                // Set the ticker ID
+                dataPoint.StockTickerId = tickerId;
+                
+                // Normalize the date to remove time component
+                var dateKey = dataPoint.Date.Date;
+
+                // Check if we already have data for this date
+                if (existingData.TryGetValue(dateKey, out var existingPoint))
+                {
+                    // Update existing data if the fee is different
+                    if (existingPoint.Fee != dataPoint.Fee)
+                    {
+                        existingPoint.Fee = dataPoint.Fee;
+                        existingPoint.AvailableShares = dataPoint.AvailableShares;
+                        dbContext.BorrowFeeData.Update(existingPoint);
+                    }
+                }
+                else
+                {
+                    // Add new data point
+                    dbContext.BorrowFeeData.Add(dataPoint);
+                }
+            }
+
+            // Save changes
+            await dbContext.SaveChangesAsync(stoppingToken);
+        }
+
+        private async Task UpdatePriceDataAsync(
+            StockDataContext dbContext,
+            int tickerId,
+            List<PriceData> newData,
+            CancellationToken stoppingToken)
+        {
+            // Get existing data for this ticker
+            var existingData = await dbContext.PriceData
+                .Where(d => d.StockTickerId == tickerId)
+                .ToDictionaryAsync(d => d.Date.Date, d => d, stoppingToken);
+
+            // Process new data
+            foreach (var dataPoint in newData)
+            {
+                // Set the ticker ID
+                dataPoint.StockTickerId = tickerId;
+                
+                // Normalize the date to remove time component
+                var dateKey = dataPoint.Date.Date;
+
+                // Check if we already have data for this date
+                if (existingData.TryGetValue(dateKey, out var existingPoint))
+                {
+                    // Update existing data if any value is different
+                    if (existingPoint.Open != dataPoint.Open ||
+                        existingPoint.High != dataPoint.High ||
+                        existingPoint.Low != dataPoint.Low ||
+                        existingPoint.Close != dataPoint.Close)
+                    {
+                        existingPoint.Open = dataPoint.Open;
+                        existingPoint.High = dataPoint.High;
+                        existingPoint.Low = dataPoint.Low;
+                        existingPoint.Close = dataPoint.Close;
+                        dbContext.PriceData.Update(existingPoint);
+                    }
+                }
+                else
+                {
+                    // Add new data point
+                    dbContext.PriceData.Add(dataPoint);
+                }
+            }
+
+            // Save changes
+            await dbContext.SaveChangesAsync(stoppingToken);
+        }
+    }
+
+    public class DataFetcherOptions
+    {
+        public int FetchIntervalMinutes { get; set; } = 60; // Default to 1 hour
+        public int DelayBetweenRequestsSeconds { get; set; } = 5; // Default to 5 seconds
+        public bool EnableBorrowFeeDataFetching { get; set; } = true;
+        public bool EnablePriceDataFetching { get; set; } = true;
+    }
+}
+
+// Made with Bob
