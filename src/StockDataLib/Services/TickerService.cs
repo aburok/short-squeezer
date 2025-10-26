@@ -15,7 +15,7 @@ namespace StockDataLib.Services
     public interface ITickerService
     {
         Task<List<StockTicker>> GetTickersFromExchangeAsync(string exchange);
-        Task<bool> RefreshTickerDataAsync(string symbol, string exchange);
+        Task<bool> RefreshTickerDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null);
         Task<bool> RefreshAllTickersAsync();
     }
 
@@ -181,7 +181,7 @@ namespace StockDataLib.Services
         /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
         /// <param name="exchange">The exchange (e.g., nasdaq)</param>
         /// <returns>True if successful, false otherwise</returns>
-        public async Task<bool> RefreshTickerDataAsync(string symbol, string exchange)
+        public async Task<bool> RefreshTickerDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
@@ -190,6 +190,14 @@ namespace StockDataLib.Services
                 exchange = exchange.ToLower().Trim();
                 
                 _logger.LogInformation("Refreshing data for {Symbol} on {Exchange}", symbol, exchange);
+                
+                // Log date range if provided
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation("Using date range: {StartDate} to {EndDate}",
+                        startDate.Value.ToString("yyyy-MM-dd"),
+                        endDate.Value.ToString("yyyy-MM-dd"));
+                }
                 
                 // Find or create the ticker
                 var ticker = await _context.StockTickers
@@ -211,7 +219,7 @@ namespace StockDataLib.Services
                 }
                 
                 // Fetch short volume data
-                var shortVolumeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange);
+                var shortVolumeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, startDate, endDate);
                 if (shortVolumeData.Any())
                 {
                     // Get existing data dates to avoid duplicates
@@ -241,7 +249,7 @@ namespace StockDataLib.Services
                 }
                 
                 // Fetch short interest data
-                var shortInterestData = await _chartExchangeService.GetShortInterestDataAsync(symbol);
+                var shortInterestData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
                 if (shortInterestData.Any())
                 {
                     // Get existing data dates to avoid duplicates
@@ -271,7 +279,7 @@ namespace StockDataLib.Services
                 }
                 
                 // Fetch borrow fee data
-                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(symbol, exchange);
+                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(symbol, exchange, startDate, endDate);
                 if (borrowFeeData.Any())
                 {
                     // Get existing data dates to avoid duplicates

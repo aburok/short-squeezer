@@ -101,7 +101,7 @@ namespace StockDataApi.Controllers
                 if (data.Count == 0 && symbol.Equals("SPY", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogInformation("No short interest data found in database for SPY, fetching from Chart Exchange");
-                    var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol);
+                    var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
                     
                     if (chartExchangeData.Any())
                     {
@@ -192,7 +192,7 @@ namespace StockDataApi.Controllers
                 if (latestData == null && symbol.Equals("SPY", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogInformation("No short interest data found in database for SPY, fetching from Chart Exchange");
-                    var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol);
+                    var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol, null, null);
                     
                     if (chartExchangeData.Any())
                     {
@@ -247,7 +247,9 @@ namespace StockDataApi.Controllers
         /// </summary>
         /// <returns>The refreshed short interest data</returns>
         [HttpPost("refresh/spy")]
-        public async Task<ActionResult<IEnumerable<ShortInterestDataDto>>> RefreshSpyShortInterestData()
+        public async Task<ActionResult<IEnumerable<ShortInterestDataDto>>> RefreshSpyShortInterestData(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
         {
             try
             {
@@ -264,7 +266,15 @@ namespace StockDataApi.Controllers
                 }
 
                 // Fetch data from Chart Exchange
-                var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol);
+                var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
+                
+                // Log date range if provided
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation("Using date range: {StartDate} to {EndDate}",
+                        startDate.Value.ToString("yyyy-MM-dd"),
+                        endDate.Value.ToString("yyyy-MM-dd"));
+                }
                 
                 if (!chartExchangeData.Any())
                 {
@@ -297,6 +307,7 @@ namespace StockDataApi.Controllers
                 }
 
                 // Clear cache
+                _cache.Remove($"ShortInterest_{symbol}_{startDate}_{endDate}");
                 _cache.Remove($"ShortInterest_{symbol}_");
                 _cache.Remove($"LatestShortInterest_{symbol}");
 

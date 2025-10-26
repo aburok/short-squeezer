@@ -105,7 +105,7 @@ namespace StockDataApi.Controllers
                     // Determine exchange (simplified - in a real app you'd have a more robust way to determine this)
                     string exchange = DetermineExchange(symbol);
                     
-                    var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange);
+                    var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, startDate, endDate);
                     
                     if (chartExchangeData.Any())
                     {
@@ -200,7 +200,7 @@ namespace StockDataApi.Controllers
                     // Determine exchange (simplified - in a real app you'd have a more robust way to determine this)
                     string exchange = DetermineExchange(symbol);
                     
-                    var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange);
+                    var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, null, null);
                     
                     if (chartExchangeData.Any())
                     {
@@ -256,7 +256,10 @@ namespace StockDataApi.Controllers
         /// <param name="symbol">The stock symbol (e.g., BYND)</param>
         /// <returns>The refreshed short volume data</returns>
         [HttpPost("refresh/{symbol}")]
-        public async Task<ActionResult<IEnumerable<ShortVolumeDataDto>>> RefreshShortVolumeData(string symbol)
+        public async Task<ActionResult<IEnumerable<ShortVolumeDataDto>>> RefreshShortVolumeData(
+            string symbol,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
         {
             try
             {
@@ -277,7 +280,15 @@ namespace StockDataApi.Controllers
                 string exchange = DetermineExchange(symbol);
                 
                 // Fetch data from Chart Exchange
-                var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange);
+                var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, startDate, endDate);
+                
+                // Log date range if provided
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation("Using date range: {StartDate} to {EndDate}",
+                        startDate.Value.ToString("yyyy-MM-dd"),
+                        endDate.Value.ToString("yyyy-MM-dd"));
+                }
                 
                 if (!chartExchangeData.Any())
                 {
@@ -310,6 +321,7 @@ namespace StockDataApi.Controllers
                 }
 
                 // Clear cache
+                _cache.Remove($"ShortVolume_{symbol}_{startDate}_{endDate}");
                 _cache.Remove($"ShortVolume_{symbol}_");
                 _cache.Remove($"LatestShortVolume_{symbol}");
 

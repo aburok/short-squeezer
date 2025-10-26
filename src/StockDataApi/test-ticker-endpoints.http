@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:80
+
+### Get all tickers
+GET {{baseUrl}}/api/Tickers
+Accept: application/json
+
+### Get a specific ticker
+GET {{baseUrl}}/api/Tickers/AAPL
+Accept: application/json
+
+### Search for tickers
+GET {{baseUrl}}/api/Tickers/search?query=AAPL
+Accept: application/json
+
+### Fetch latest data for a specific ticker
+POST {{baseUrl}}/api/Tickers/fetch/AAPL
+Content-Type: application/json
+
+### Refresh data for a specific ticker with date range
+POST {{baseUrl}}/api/Tickers/refresh/AAPL?exchange=nasdaq&startDate=2023-01-01&endDate=2023-12-31
+Content-Type: application/json
+
+### Refresh all tickers from exchanges
+POST {{baseUrl}}/api/Tickers/refresh-all
+Content-Type: application/json

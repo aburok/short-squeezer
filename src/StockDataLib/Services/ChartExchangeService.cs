@@ -13,10 +13,10 @@ namespace StockDataLib.Services
 {
     public interface IChartExchangeService
     {
-        Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange);
+        Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null);
         Task<string> GetHtmlContentAsync(string url);
-        Task<List<ShortInterestData>> GetShortInterestDataAsync(string symbol);
-        Task<List<ShortVolumeData>> GetShortVolumeDataAsync(string symbol, string exchange);
+        Task<List<ShortInterestData>> GetShortInterestDataAsync(string symbol, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<ShortVolumeData>> GetShortVolumeDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null);
     }
 
     public class ChartExchangeService : IChartExchangeService
@@ -36,7 +36,7 @@ namespace StockDataLib.Services
         /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
         /// <param name="exchange">The exchange (e.g., nasdaq)</param>
         /// <returns>A list of borrow fee data points</returns>
-        public async Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange)
+        public async Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
@@ -51,7 +51,19 @@ namespace StockDataLib.Services
                     return new List<BorrowFeeData>();
                 }
 
-                return ExtractBorrowFeeDataFromHtml(html);
+                var data = ExtractBorrowFeeDataFromHtml(html);
+                
+                // Filter by date range if provided
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation("Filtering borrow fee data by date range: {StartDate} to {EndDate}",
+                        startDate.Value.ToString("yyyy-MM-dd"),
+                        endDate.Value.ToString("yyyy-MM-dd"));
+                    
+                    data = data.Where(d => d.Date.Date >= startDate.Value.Date && d.Date.Date <= endDate.Value.Date).ToList();
+                }
+                
+                return data;
             }
             catch (Exception ex)
             {
@@ -252,7 +264,7 @@ namespace StockDataLib.Services
         /// </summary>
         /// <param name="symbol">The stock symbol (e.g., SPY)</param>
         /// <returns>A list of short interest data points</returns>
-        public async Task<List<ShortInterestData>> GetShortInterestDataAsync(string symbol)
+        public async Task<List<ShortInterestData>> GetShortInterestDataAsync(string symbol, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
@@ -277,7 +289,19 @@ namespace StockDataLib.Services
                 }
 
                 string csvContent = await response.Content.ReadAsStringAsync();
-                return ParseShortInterestCsv(csvContent);
+                var data = ParseShortInterestCsv(csvContent);
+                
+                // Filter by date range if provided
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation("Filtering short interest data by date range: {StartDate} to {EndDate}",
+                        startDate.Value.ToString("yyyy-MM-dd"),
+                        endDate.Value.ToString("yyyy-MM-dd"));
+                    
+                    data = data.Where(d => d.Date.Date >= startDate.Value.Date && d.Date.Date <= endDate.Value.Date).ToList();
+                }
+                
+                return data;
             }
             catch (Exception ex)
             {
@@ -356,7 +380,7 @@ namespace StockDataLib.Services
         /// <param name="symbol">The stock symbol (e.g., BYND)</param>
         /// <param name="exchange">The exchange (e.g., nasdaq)</param>
         /// <returns>A list of short volume data points</returns>
-        public async Task<List<ShortVolumeData>> GetShortVolumeDataAsync(string symbol, string exchange)
+        public async Task<List<ShortVolumeData>> GetShortVolumeDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
@@ -381,7 +405,19 @@ namespace StockDataLib.Services
                 }
 
                 string csvContent = await response.Content.ReadAsStringAsync();
-                return ParseShortVolumeCsv(csvContent);
+                var data = ParseShortVolumeCsv(csvContent);
+                
+                // Filter by date range if provided
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    _logger.LogInformation("Filtering short volume data by date range: {StartDate} to {EndDate}",
+                        startDate.Value.ToString("yyyy-MM-dd"),
+                        endDate.Value.ToString("yyyy-MM-dd"));
+                    
+                    data = data.Where(d => d.Date.Date >= startDate.Value.Date && d.Date.Date <= endDate.Value.Date).ToList();
+                }
+                
+                return data;
             }
             catch (Exception ex)
             {

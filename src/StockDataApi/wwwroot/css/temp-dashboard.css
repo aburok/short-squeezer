@@ -1,0 +1,33 @@
+/* Temporary Dashboard Styles */
+
+.temp-dashboard {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.temp-dashboard h2 {
+  color: #343a40;
+  margin-bottom: 20px;
+}
+
+.temp-dashboard p {
+  color: #6c757d;
+  margin-bottom: 15px;
+}
+
+.temp-actions {
+  margin-top: 30px;
+}
+
+.temp-actions button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Made with Bob */

@@ -1,0 +1,14 @@
+### Test date range parameters for ShortInterest endpoint
+GET http://localhost:80/api/ShortInterest/SPY?startDate=2023-01-01&endDate=2023-12-31
+
+### Test date range parameters for ShortVolume endpoint
+GET http://localhost:80/api/ShortVolume/AAPL?startDate=2023-01-01&endDate=2023-12-31
+
+### Test date range parameters for refreshing ShortInterest data
+POST http://localhost:80/api/ShortInterest/refresh/spy?startDate=2023-01-01&endDate=2023-12-31
+
+### Test date range parameters for refreshing ShortVolume data
+POST http://localhost:80/api/ShortVolume/refresh/AAPL?startDate=2023-01-01&endDate=2023-12-31
+
+### Test date range parameters for refreshing ticker data
+POST http://localhost:80/api/Tickers/refresh/AAPL?exchange=nasdaq&startDate=2023-01-01&endDate=2023-12-31

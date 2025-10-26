@@ -247,7 +247,11 @@ namespace StockDataApi.Controllers
         /// <param name="exchange">The exchange (e.g., nasdaq)</param>
         /// <returns>Success or failure message</returns>
         [HttpPost("refresh/{symbol}")]
-        public async Task<IActionResult> RefreshTickerData(string symbol, [FromQuery] string exchange = "nasdaq")
+        public async Task<IActionResult> RefreshTickerData(
+            string symbol,
+            [FromQuery] string exchange = "nasdaq",
+            [FromQuery] string startDate = null,
+            [FromQuery] string endDate = null)
         {
             try
             {
@@ -257,7 +261,28 @@ namespace StockDataApi.Controllers
                 
                 _logger.LogInformation("Refreshing data for {Symbol} on {Exchange}", symbol, exchange);
                 
-                bool success = await _tickerService.RefreshTickerDataAsync(symbol, exchange);
+                // Parse date range if provided
+                DateTime? parsedStartDate = null;
+                DateTime? parsedEndDate = null;
+                
+                if (!string.IsNullOrEmpty(startDate) && DateTime.TryParse(startDate, out DateTime start))
+                {
+                    parsedStartDate = start;
+                }
+                
+                if (!string.IsNullOrEmpty(endDate) && DateTime.TryParse(endDate, out DateTime end))
+                {
+                    parsedEndDate = end;
+                }
+                
+                if (parsedStartDate.HasValue && parsedEndDate.HasValue)
+                {
+                    _logger.LogInformation("Using date range: {StartDate} to {EndDate}",
+                        parsedStartDate.Value.ToString("yyyy-MM-dd"),
+                        parsedEndDate.Value.ToString("yyyy-MM-dd"));
+                }
+                
+                bool success = await _tickerService.RefreshTickerDataAsync(symbol, exchange, parsedStartDate, parsedEndDate);
                 
                 if (success)
                 {
@@ -314,6 +339,118 @@ namespace StockDataApi.Controllers
                 return StatusCode(500, "An error occurred while refreshing all tickers");
             }
         }
+
+        /// <summary>
+        /// Fetches latest data for a specific ticker
+        /// </summary>
+        /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
+        /// <returns>Success or failure message with status</returns>
+        [HttpPost("fetch/{symbol}")]
+        public async Task<ActionResult<FetchResultDto>> FetchTickerData(string symbol)
+        {
+            try
+            {
+                // Normalize the symbol
+                symbol = symbol.ToUpper().Trim();
+                
+                _logger.LogInformation("Fetching latest data for {Symbol}", symbol);
+                
+                // Find the ticker to get its exchange
+                var ticker = await _context.StockTickers
+                    .FirstOrDefaultAsync(t => t.Symbol == symbol);
+                
+                if (ticker == null)
+                {
+                    _logger.LogWarning("Ticker {Symbol} not found for data fetching", symbol);
+                    return NotFound(new FetchResultDto
+                    {
+                        Symbol = symbol,
+                        Success = false,
+                        Message = $"Ticker {symbol} not found"
+                    });
+                }
+                
+                // Use the ticker service to refresh data
+                bool success = await _tickerService.RefreshTickerDataAsync(symbol, ticker.Exchange);
+                
+                if (success)
+                {
+                    // Clear cache
+                    _cache.Remove($"Ticker_{symbol}");
+                    
+                    _logger.LogInformation("Successfully fetched latest data for {Symbol}", symbol);
+                    return Ok(new FetchResultDto
+                    {
+                        Symbol = symbol,
+                        Success = true,
+                        Message = $"Successfully fetched latest data for {symbol}",
+                        LastUpdated = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to fetch latest data for {Symbol}", symbol);
+                    return BadRequest(new FetchResultDto
+                    {
+                        Symbol = symbol,
+                        Success = false,
+                        Message = $"Failed to fetch latest data for {symbol}"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching latest data for {Symbol}", symbol);
+                return StatusCode(500, new FetchResultDto
+                {
+                    Symbol = symbol,
+                    Success = false,
+                    Message = "An error occurred while fetching the latest data"
+                });
+            }
+        }
+        
+        /// <summary>
+        /// Searches for tickers matching a query string
+        /// </summary>
+        /// <param name="query">The search query</param>
+        /// <returns>List of matching tickers</returns>
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<TickerDto>>> SearchTickers([FromQuery] string query)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                {
+                    return BadRequest("Search query must be at least 2 characters");
+                }
+                
+                query = query.ToUpper().Trim();
+                
+                _logger.LogInformation("Searching for tickers matching '{Query}'", query);
+                
+                var results = await _context.StockTickers
+                    .Where(t => t.Symbol.Contains(query) || (t.Name != null && t.Name.Contains(query)))
+                    .OrderBy(t => t.Symbol)
+                    .Take(20)
+                    .Select(t => new TickerDto
+                    {
+                        Symbol = t.Symbol,
+                        Exchange = t.Exchange,
+                        Name = t.Name,
+                        LastUpdated = t.LastUpdated
+                    })
+                    .ToListAsync();
+                
+                _logger.LogInformation("Found {Count} tickers matching '{Query}'", results.Count, query);
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching for tickers with query '{Query}'", query);
+                return StatusCode(500, "An error occurred while searching for tickers");
+            }
+        }
     }
 
     /// <summary>
@@ -325,6 +462,17 @@ namespace StockDataApi.Controllers
         public string Exchange { get; set; }
         public string Name { get; set; }
         public DateTime LastUpdated { get; set; }
+    }
+    
+    /// <summary>
+    /// Data transfer object for fetch operation result
+    /// </summary>
+    public class FetchResultDto
+    {
+        public string Symbol { get; set; }
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public DateTime? LastUpdated { get; set; }
     }
 }
 

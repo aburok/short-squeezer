@@ -14,6 +14,24 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('refreshDataBtn').addEventListener('click', refreshTickerData);
     document.getElementById('refreshAllTickersBtn').addEventListener('click', refreshAllTickers);
     
+    // Listen for date range picker events
+    document.addEventListener('stockDataUpdated', function(e) {
+        const { ticker, startDate, endDate } = e.detail;
+        
+        // Update input fields with the selected ticker
+        document.getElementById('shortInterestSymbol').value = ticker;
+        document.getElementById('shortVolumeSymbol').value = ticker;
+        document.getElementById('borrowFeeSymbol').value = ticker;
+        document.getElementById('refreshSymbol').value = ticker;
+        
+        // Load data for all charts with the selected ticker and date range
+        loadShortInterestData(ticker, startDate, endDate);
+        loadShortVolumeData(ticker, startDate, endDate);
+        loadBorrowFeeData(ticker, startDate, endDate);
+        
+        showStatus(`Loading data for ${ticker} from ${startDate} to ${endDate}`, 'info');
+    });
+    
     // Initialize charts with empty data
     initializeCharts();
 });
@@ -127,14 +145,21 @@ function initializeCharts() {
 }
 
 // Load Short Interest Data
-function loadShortInterestData() {
-    const symbol = document.getElementById('shortInterestSymbol').value.trim().toUpperCase();
+function loadShortInterestData(ticker, startDate, endDate) {
+    const symbol = ticker || document.getElementById('shortInterestSymbol').value.trim().toUpperCase();
     if (!symbol) {
         showStatus('Please enter a stock symbol', 'danger');
         return;
     }
 
-    fetch(`/api/ShortInterest/${symbol}`)
+    let url = `/api/ShortInterest/${symbol}`;
+    
+    // Add date range parameters if provided
+    if (startDate && endDate) {
+        url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+
+    fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -169,8 +194,8 @@ function updateShortInterestChart(data, symbol) {
 }
 
 // Load Short Volume Data
-function loadShortVolumeData() {
-    const symbol = document.getElementById('shortVolumeSymbol').value.trim().toUpperCase();
+function loadShortVolumeData(ticker, startDate, endDate) {
+    const symbol = ticker || document.getElementById('shortVolumeSymbol').value.trim().toUpperCase();
     const exchange = document.getElementById('shortVolumeExchange').value;
     
     if (!symbol) {
@@ -178,7 +203,14 @@ function loadShortVolumeData() {
         return;
     }
 
-    fetch(`/api/ShortVolume/${symbol}?exchange=${exchange}`)
+    let url = `/api/ShortVolume/${symbol}?exchange=${exchange}`;
+    
+    // Add date range parameters if provided
+    if (startDate && endDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`;
+    }
+
+    fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -213,8 +245,8 @@ function updateShortVolumeChart(data, symbol) {
 }
 
 // Load Borrow Fee Data
-function loadBorrowFeeData() {
-    const symbol = document.getElementById('borrowFeeSymbol').value.trim().toUpperCase();
+function loadBorrowFeeData(ticker, startDate, endDate) {
+    const symbol = ticker || document.getElementById('borrowFeeSymbol').value.trim().toUpperCase();
     const exchange = document.getElementById('borrowFeeExchange').value;
     
     if (!symbol) {
@@ -222,7 +254,14 @@ function loadBorrowFeeData() {
         return;
     }
 
-    fetch(`/api/BorrowFee/${symbol}?exchange=${exchange}`)
+    let url = `/api/BorrowFee/${symbol}?exchange=${exchange}`;
+    
+    // Add date range parameters if provided
+    if (startDate && endDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`;
+    }
+
+    fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -257,8 +296,8 @@ function updateBorrowFeeChart(data, symbol) {
 }
 
 // Refresh Ticker Data
-function refreshTickerData() {
-    const symbol = document.getElementById('refreshSymbol').value.trim().toUpperCase();
+function refreshTickerData(ticker, startDate, endDate) {
+    const symbol = ticker || document.getElementById('refreshSymbol').value.trim().toUpperCase();
     const exchange = document.getElementById('refreshExchange').value;
     
     if (!symbol) {
@@ -268,7 +307,14 @@ function refreshTickerData() {
 
     showStatus(`Refreshing data for ${symbol}...`, 'info');
 
-    fetch(`/api/Tickers/refresh/${symbol}?exchange=${exchange}`, {
+    let url = `/api/Tickers/refresh/${symbol}?exchange=${exchange}`;
+    
+    // Add date range parameters if provided
+    if (startDate && endDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`;
+    }
+
+    fetch(url, {
         method: 'POST'
     })
         .then(response => {
