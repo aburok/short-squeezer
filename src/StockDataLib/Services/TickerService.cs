@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StockDataLib.Data;
@@ -53,36 +53,15 @@ namespace StockDataLib.Services
                 switch (exchange)
                 {
                     case "nasdaq":
-                        url = "https://www.nasdaq.com/market-activity/stocks/screener";
-                        break;
                     case "nyse":
-                        url = "https://www.nyse.com/listings/stock-screener";
-                        break;
+                    case "amex":
+                    case "all":
+                        // Try SEC first, then fallback to alternative sources
+                        return await TrySecEndpoint(exchange);
                     default:
                         _logger.LogWarning("Unsupported exchange: {Exchange}", exchange);
                         return new List<StockTicker>();
                 }
-
-                _logger.LogInformation("Fetching tickers from {Exchange} at {Url}", exchange, url);
-
-                using var httpClient = _httpClientFactory.CreateClient("ExchangeData");
-                
-                // Add headers to mimic a browser request
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36");
-                httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
-                
-                var response = await httpClient.GetAsync(url);
-                
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Failed to fetch tickers: {StatusCode} {ReasonPhrase}",
-                        response.StatusCode, response.ReasonPhrase);
-                    return new List<StockTicker>();
-                }
-
-                string html = await response.Content.ReadAsStringAsync();
-                return ParseTickersFromHtml(html, exchange);
             }
             catch (Exception ex)
             {
@@ -92,85 +71,220 @@ namespace StockDataLib.Services
         }
 
         /// <summary>
-        /// Parses tickers from HTML content
+        /// Tries to fetch tickers from SEC endpoint with fallback options
         /// </summary>
-        /// <param name="html">The HTML content</param>
-        /// <param name="exchange">The exchange name</param>
+        /// <param name="exchange">The exchange filter</param>
         /// <returns>A list of stock tickers</returns>
-        private List<StockTicker> ParseTickersFromHtml(string html, string exchange)
+        private async Task<List<StockTicker>> TrySecEndpoint(string exchange)
+        {
+            try
+            {
+                _logger.LogInformation("Attempting to fetch tickers from SEC endpoint for {Exchange}", exchange);
+                
+                // Add a small delay to be respectful to SEC servers
+                await Task.Delay(1000);
+
+                using var httpClient = _httpClientFactory.CreateClient("ExchangeData");
+                
+                // Add headers required by SEC.gov for automated access
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "StockDataApi/1.0 (https://github.com/your-repo/stock-data-api; contact@yourdomain.com)");
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/json, text/plain, */*");
+                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+                httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+                httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
+                httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+                httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+                httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Site", "cross-site");
+                
+                var response = await httpClient.GetAsync("https://www.sec.gov/files/company_tickers.json");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("SEC endpoint failed: {StatusCode} {ReasonPhrase}. Content: {Content}",
+                        response.StatusCode, response.ReasonPhrase, errorContent);
+                    
+                    // Check for specific SEC access issues
+                    if (response.StatusCode == System.Net.HttpStatusCode.Forbidden && 
+                        errorContent.Contains("Privacy and Security Policy"))
+                    {
+                        _logger.LogError("SEC access denied. Please ensure your application complies with SEC.gov's Privacy and Security Policy. " +
+                            "Consider adding proper User-Agent header and rate limiting.");
+                    }
+                    
+                    // Try fallback to NASDAQ endpoint
+                    return await TryNasdaqFallback(exchange);
+                }
+
+                string content = await response.Content.ReadAsStringAsync();
+                
+                // Use SEC JSON parser for all exchanges
+                return ParseSecTickers(content, exchange);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching tickers from SEC endpoint for {Exchange}", exchange);
+                
+                // Try fallback to NASDAQ endpoint
+                return await TryNasdaqFallback(exchange);
+            }
+        }
+
+        /// <summary>
+        /// Fallback method to fetch NASDAQ tickers if SEC endpoint fails
+        /// </summary>
+        /// <param name="exchange">The exchange filter</param>
+        /// <returns>A list of stock tickers</returns>
+        private async Task<List<StockTicker>> TryNasdaqFallback(string exchange)
+        {
+            try
+            {
+                _logger.LogInformation("Trying NASDAQ fallback for {Exchange}", exchange);
+                
+                using var httpClient = _httpClientFactory.CreateClient("ExchangeData");
+                
+                // Add headers for NASDAQ endpoint
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36");
+                httpClient.DefaultRequestHeaders.Add("Accept", "text/plain, */*");
+                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+                
+                var response = await httpClient.GetAsync("https://www.nasdaqtrader.com/dynamic/symdir/nasdaqlisted.txt");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("NASDAQ fallback also failed: {StatusCode} {ReasonPhrase}",
+                        response.StatusCode, response.ReasonPhrase);
+                    return new List<StockTicker>();
+                }
+
+                string content = await response.Content.ReadAsStringAsync();
+                
+                // Parse NASDAQ format
+                return ParseNasdaqTickers(content);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching tickers from NASDAQ fallback for {Exchange}", exchange);
+                return new List<StockTicker>();
+            }
+        }
+
+        /// <summary>
+        /// Parses tickers from NASDAQ pipe-delimited format (fallback method)
+        /// </summary>
+        /// <param name="content">The NASDAQ data content</param>
+        /// <returns>A list of stock tickers</returns>
+        private List<StockTicker> ParseNasdaqTickers(string content)
         {
             try
             {
                 var tickers = new List<StockTicker>();
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-
-                // Different parsing logic based on exchange
-                if (exchange == "nasdaq")
+                var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                
+                // Skip the header line and process each line
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    // Extract ticker data from NASDAQ page
-                    // This is a simplified example - actual implementation would need to handle NASDAQ's specific HTML structure
-                    var rows = doc.DocumentNode.SelectNodes("//table[contains(@class, 'nasdaq-screener__table')]/tbody/tr");
+                    var line = lines[i].Trim();
+                    if (string.IsNullOrEmpty(line)) continue;
                     
-                    if (rows != null)
+                    var parts = line.Split('|');
+                    
+                    // NASDAQ format: Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
+                    if (parts.Length >= 2)
                     {
-                        foreach (var row in rows)
+                        string symbol = parts[0].Trim();
+                        string name = parts[1].Trim();
+                        string testIssue = parts.Length > 3 ? parts[3].Trim() : "";
+                        
+                        // Skip test issues and invalid symbols
+                        if (testIssue == "Y" || string.IsNullOrEmpty(symbol) || symbol.Length > 5)
+                            continue;
+                        
+                        tickers.Add(new StockTicker
                         {
-                            var symbolNode = row.SelectSingleNode(".//td[1]/a");
-                            var nameNode = row.SelectSingleNode(".//td[2]");
-                            
-                            if (symbolNode != null && nameNode != null)
-                            {
-                                string symbol = symbolNode.InnerText.Trim();
-                                string name = nameNode.InnerText.Trim();
-                                
-                                tickers.Add(new StockTicker
-                                {
-                                    Symbol = symbol,
-                                    Name = name,
-                                    Exchange = exchange,
-                                    LastUpdated = DateTime.UtcNow
-                                });
-                            }
-                        }
+                            Symbol = symbol,
+                            Name = name,
+                            Exchange = "nasdaq",
+                            LastUpdated = DateTime.UtcNow
+                        });
                     }
                 }
-                else if (exchange == "nyse")
-                {
-                    // Extract ticker data from NYSE page
-                    // This is a simplified example - actual implementation would need to handle NYSE's specific HTML structure
-                    var rows = doc.DocumentNode.SelectNodes("//table[contains(@class, 'nyse-screener')]/tbody/tr");
-                    
-                    if (rows != null)
-                    {
-                        foreach (var row in rows)
-                        {
-                            var symbolNode = row.SelectSingleNode(".//td[1]");
-                            var nameNode = row.SelectSingleNode(".//td[2]");
-                            
-                            if (symbolNode != null && nameNode != null)
-                            {
-                                string symbol = symbolNode.InnerText.Trim();
-                                string name = nameNode.InnerText.Trim();
-                                
-                                tickers.Add(new StockTicker
-                                {
-                                    Symbol = symbol,
-                                    Name = name,
-                                    Exchange = exchange,
-                                    LastUpdated = DateTime.UtcNow
-                                });
-                            }
-                        }
-                    }
-                }
-
-                _logger.LogInformation("Successfully parsed {Count} tickers from {Exchange}", tickers.Count, exchange);
+                
+                _logger.LogInformation("Successfully parsed {Count} NASDAQ tickers (fallback)", tickers.Count);
                 return tickers;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error parsing tickers from HTML for {Exchange}", exchange);
+                _logger.LogError(ex, "Error parsing NASDAQ tickers (fallback)");
+                return new List<StockTicker>();
+            }
+        }
+
+        /// <summary>
+        /// Parses tickers from SEC JSON format
+        /// </summary>
+        /// <param name="content">The SEC JSON content</param>
+        /// <param name="exchange">The exchange filter (nasdaq, nyse, amex, all)</param>
+        /// <returns>A list of stock tickers</returns>
+        private List<StockTicker> ParseSecTickers(string content, string exchange)
+        {
+            try
+            {
+                var tickers = new List<StockTicker>();
+                
+                // Parse JSON content
+                var jsonData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(content);
+                
+                if (jsonData == null)
+                {
+                    _logger.LogWarning("Failed to parse SEC JSON data");
+                    return tickers;
+                }
+                
+                // SEC JSON format: {"0": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."}, ...}
+                foreach (var kvp in jsonData)
+                {
+                    if (kvp.Value is JsonElement element)
+                    {
+                        try
+                        {
+                            var tickerData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(element.GetRawText());
+                            
+                            if (tickerData != null && 
+                                tickerData.ContainsKey("ticker") && 
+                                tickerData.ContainsKey("title"))
+                            {
+                                string symbol = tickerData["ticker"]?.ToString()?.Trim();
+                                string name = tickerData["title"]?.ToString()?.Trim();
+                                
+                                if (!string.IsNullOrEmpty(symbol) && !string.IsNullOrEmpty(name))
+                                {
+                                    // Determine exchange based on symbol patterns or use "all" for comprehensive list
+                                    string tickerExchange = exchange == "all" ? "all" : exchange;
+                                    
+                                    tickers.Add(new StockTicker
+                                    {
+                                        Symbol = symbol,
+                                        Name = name,
+                                        Exchange = tickerExchange,
+                                        LastUpdated = DateTime.UtcNow
+                                    });
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Error parsing individual ticker entry: {Key}", kvp.Key);
+                        }
+                    }
+                }
+                
+                _logger.LogInformation("Successfully parsed {Count} SEC tickers for {Exchange}", tickers.Count, exchange);
+                return tickers;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error parsing SEC tickers");
                 return new List<StockTicker>();
             }
         }
@@ -332,12 +446,8 @@ namespace StockDataLib.Services
             {
                 _logger.LogInformation("Starting refresh of all tickers from exchanges");
                 
-                // Get tickers from exchanges
-                var nasdaqTickers = await GetTickersFromExchangeAsync("nasdaq");
-                var nyseTickers = await GetTickersFromExchangeAsync("nyse");
-                
-                // Combine all tickers
-                var allTickers = nasdaqTickers.Concat(nyseTickers).ToList();
+                // Get tickers from SEC (covers all exchanges)
+                var allTickers = await GetTickersFromExchangeAsync("all");
                 
                 if (allTickers.Count == 0)
                 {

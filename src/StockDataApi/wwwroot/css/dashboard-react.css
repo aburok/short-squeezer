@@ -156,7 +156,6 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
   font-size: 16px;
   margin-top: 10px;
 }
@@ -166,6 +165,40 @@
 }
 
 .fetch-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Button Group */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.button-group .fetch-button {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* Refresh All Button */
+.refresh-all-button {
+  padding: 10px 20px;
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  flex: 1;
+  transition: all 0.2s ease;
+}
+
+.refresh-all-button:hover {
+  background-color: #138496;
+}
+
+.refresh-all-button:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
 }

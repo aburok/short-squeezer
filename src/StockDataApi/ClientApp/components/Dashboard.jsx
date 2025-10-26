@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TickerSearch from './TickerSearch';
-import DateRangePicker from './DateRangePicker';
+import MovableDateRangePicker from './MovableDateRangePicker';
 import ShortInterestChart from './ShortInterestChart';
 import ShortVolumeChart from './ShortVolumeChart';
 
@@ -16,6 +16,7 @@ const Dashboard = () => {
   
   // UI state
   const [isDataFetching, setIsDataFetching] = useState(false);
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
   const [fetchMessage, setFetchMessage] = useState('');
   const [activeCharts, setActiveCharts] = useState({
     shortInterest: true,
@@ -41,6 +42,37 @@ const Dashboard = () => {
     });
     
     console.log(`Date range updated: ${formattedStartDate} to ${formattedEndDate}`);
+  };
+
+  // Refresh all tickers from exchanges
+  const handleRefreshAllTickers = async () => {
+    setIsRefreshingAll(true);
+    setFetchMessage('Refreshing all tickers from exchanges...');
+
+    try {
+      const response = await fetch('/api/Tickers/refresh-all', {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const result = await response.text();
+      setFetchMessage('Successfully refreshed all tickers from exchanges');
+      
+      // Clear selected ticker to force a refresh of the ticker search
+      setSelectedTicker('');
+      
+    } catch (error) {
+      console.error('Error refreshing all tickers:', error);
+      setFetchMessage(`Error refreshing all tickers: ${error.message}`);
+    } finally {
+      setTimeout(() => {
+        setIsRefreshingAll(false);
+        setTimeout(() => setFetchMessage(''), 5000); // Show message longer for refresh all
+      }, 2000);
+    }
   };
 
   // Fetch latest data for the selected ticker
@@ -102,18 +134,27 @@ const Dashboard = () => {
             <div className="ticker-control">
               <h3>Select Ticker</h3>
               <TickerSearch onTickerSelect={handleTickerSelect} />
-              <button
-                onClick={handleFetchData}
-                disabled={!selectedTicker || isDataFetching}
-                className="fetch-button"
-              >
-                {isDataFetching ? 'Fetching...' : 'Fetch Latest Data'}
-              </button>
+              <div className="button-group">
+                <button
+                  onClick={handleFetchData}
+                  disabled={!selectedTicker || isDataFetching}
+                  className="fetch-button"
+                >
+                  {isDataFetching ? 'Fetching...' : 'Fetch Latest Data'}
+                </button>
+                <button
+                  onClick={handleRefreshAllTickers}
+                  disabled={isRefreshingAll}
+                  className="refresh-all-button"
+                >
+                  {isRefreshingAll ? 'Refreshing All...' : 'Refresh All Tickers'}
+                </button>
+              </div>
             </div>
             
             <div className="date-range-control">
               <h3>Select Date Range</h3>
-              <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+              <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
             </div>
           </div>
           

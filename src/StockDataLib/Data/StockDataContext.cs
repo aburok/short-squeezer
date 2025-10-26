@@ -40,7 +40,7 @@ namespace StockDataLib.Data
 
             modelBuilder.Entity<StockTicker>()
                 .Property(s => s.Name)
-                .HasMaxLength(100);
+                .HasMaxLength(1000);
 
             // Configure base StockDataPoint properties
             void ConfigureStockDataPoint<T>(ModelBuilder builder) where T : StockDataPoint
