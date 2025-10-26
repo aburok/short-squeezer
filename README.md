@@ -104,3 +104,4 @@ Use the included PowerShell script to test the API endpoints:
 When using Docker, update the base URL in the test script to:
 ```powershell
 $baseUrl = "http://localhost:5000/api"# share-squeezer
+# short-squeezer
