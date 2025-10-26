@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 // Configure Kestrel to listen on all IP addresses
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {

@@ -135,15 +135,40 @@ const MovableDateRangePicker: React.FC<MovableDateRangePickerProps> = ({
 
   return (
     <div className="movable-date-range-picker">
-      <div className="date-range-info">
-        <div className="date-display">
-          <strong>Start:</strong> {moment(selectedRange.start).format('MMM DD, YYYY')}
+      <div className="date-controls-row">
+        <div className="date-range-info">
+          <div className="date-display">
+            <strong>Start:</strong> {moment(selectedRange.start).format('MMM DD, YYYY')}
+          </div>
+          <div className="date-display">
+            <strong>End:</strong> {moment(selectedRange.end).format('MMM DD, YYYY')}
+          </div>
+          <div className="date-display">
+            <strong>Duration:</strong> {rangeDays} days
+          </div>
         </div>
-        <div className="date-display">
-          <strong>End:</strong> {moment(selectedRange.end).format('MMM DD, YYYY')}
-        </div>
-        <div className="date-display">
-          <strong>Duration:</strong> {rangeDays} days
+
+        <div className="timeline-controls">
+          <div className="control-buttons">
+            <button className="control-button" onClick={() => moveRange(-7)}>
+              ← Move Back 7 Days
+            </button>
+            <button className="control-button" onClick={() => moveRange(7)}>
+              Move Forward 7 Days →
+            </button>
+          </div>
+          
+          <div className="preset-buttons">
+            <button className="preset-button" onClick={() => setPresetRange(7)}>
+              Last 7 Days
+            </button>
+            <button className="preset-button" onClick={() => setPresetRange(30)}>
+              Last 30 Days
+            </button>
+            <button className="preset-button" onClick={() => setPresetRange(90)}>
+              Last 90 Days
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,29 +187,6 @@ const MovableDateRangePicker: React.FC<MovableDateRangePickerProps> = ({
                    onMouseDown={(e) => handleResizeStart(e, 'end')}></div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="timeline-controls">
-        <div className="control-buttons">
-          <button className="control-button" onClick={() => moveRange(-7)}>
-            ← Move Back 7 Days
-          </button>
-          <button className="control-button" onClick={() => moveRange(7)}>
-            Move Forward 7 Days →
-          </button>
-        </div>
-        
-        <div className="preset-buttons">
-          <button className="preset-button" onClick={() => setPresetRange(7)}>
-            Last 7 Days
-          </button>
-          <button className="preset-button" onClick={() => setPresetRange(30)}>
-            Last 30 Days
-          </button>
-          <button className="preset-button" onClick={() => setPresetRange(90)}>
-            Last 90 Days
-          </button>
         </div>
       </div>
     </div>
