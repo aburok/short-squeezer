@@ -1,107 +1,144 @@
-# Stock Data API
+# Stock Data Dashboard
 
-A .NET service for fetching and serving stock market data including price data and borrow fees.
+A comprehensive stock data analysis platform with separate frontend and backend applications.
 
-## Projects
+## Architecture
 
-The solution consists of three projects:
+This project consists of two separate applications:
 
-1. **StockDataApi**: ASP.NET Core Web API that serves stock data via REST endpoints
-2. **StockDataWorker**: Background service that periodically fetches stock data from external sources
-3. **StockDataLib**: Shared library containing models, data context, and services
+1. **Stock Data API** (`src/StockDataApi/`) - .NET 9 Web API backend
+2. **Stock Data Frontend** (`stock-data-frontend/`) - React TypeScript frontend
+
+## Quick Start
+
+### 1. Start the API Backend
+
+```bash
+# Build and run the API
+dotnet run --project src/StockDataApi
+
+# API will be available at http://localhost:5000
+# Swagger documentation at http://localhost:5000/swagger
+```
+
+### 2. Start the Frontend
+
+```bash
+# Navigate to frontend directory
+cd stock-data-frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start development server
+npm start
+
+# Frontend will be available at http://localhost:3000
+```
 
 ## Features
 
-- Fetch stock price data from Alpha Vantage API
-- Fetch borrow fee data from Chart Exchange
-- Store data in SQL Server database
-- Serve data via REST API endpoints
-- Caching for improved performance
-- Docker support for easy deployment
+### Backend API
+- **RESTful API**: Complete stock data API with Swagger documentation
+- **Data Sources**: Integration with Chart Exchange, Alpha Vantage, NASDAQ
+- **Database**: Entity Framework Core with SQL Server
+- **Background Services**: Automated data fetching and ticker updates
+- **CORS**: Configured for frontend access
+
+### Frontend Dashboard
+- **Interactive Dashboard**: Modern React-based interface
+- **Custom Date Picker**: MovableDateRangePicker with timeline slider
+- **Data Visualization**: Chart.js integration for charts
+- **Real-time Updates**: Live data fetching from API
+- **Responsive Design**: Works on all devices
+
+## Project Structure
+
+```
+stock-data-api/
+├── src/
+│   ├── StockDataApi/          # API Backend (.NET 9)
+│   ├── StockDataLib/          # Shared Library
+│   ├── StockDataWorker/       # Background Worker Service
+│   └── TestProjects/          # Test Applications
+├── stock-data-frontend/        # React Frontend
+├── sql/                        # Database Docker setup
+└── docker-compose.yml          # Container orchestration
+```
 
 ## API Endpoints
 
-### Tickers
+- `GET /api/Tickers` - Get all stock tickers
+- `GET /api/Tickers/{symbol}` - Get specific ticker details
+- `POST /api/Tickers/refresh-all` - Refresh all tickers from exchanges
+- `POST /api/Tickers/fetch/{symbol}` - Fetch latest data for ticker
+- `GET /api/ShortInterest/{symbol}` - Get short interest data
+- `GET /api/ShortVolume/{symbol}` - Get short volume data
+- `GET /api/BorrowFee/{symbol}` - Get borrow fee data
+- `GET /api/Price/{symbol}` - Get price data
 
-- `GET /api/Tickers`: Get all available stock tickers
-- `GET /api/Tickers/{symbol}`: Get information about a specific ticker
-- `POST /api/Tickers`: Add a new ticker
-- `DELETE /api/Tickers/{symbol}`: Delete a ticker
+## Development Benefits
 
-### Price Data
+### Separated Architecture Advantages:
+- **Faster Development**: Frontend changes don't require API rebuilds
+- **Independent Scaling**: Scale frontend and backend separately
+- **Technology Flexibility**: Use different technologies for each layer
+- **Team Collaboration**: Frontend and backend teams can work independently
+- **Hot Reloading**: Frontend supports instant updates during development
 
-- `GET /api/Price/{symbol}`: Get price data for a specific ticker
-- `GET /api/Price/{symbol}/latest`: Get the latest price for a specific ticker
-- `GET /api/Price/{symbol}?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd`: Get price data for a specific date range
-
-### Borrow Fee Data
-
-- `GET /api/BorrowFee/{symbol}`: Get borrow fee data for a specific ticker
-- `GET /api/BorrowFee/{symbol}/latest`: Get the latest borrow fee for a specific ticker
-- `GET /api/BorrowFee/{symbol}?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd`: Get borrow fee data for a specific date range
+### Development Workflow:
+1. **API Development**: Make changes to API, restart API server
+2. **Frontend Development**: Make changes to React components, see instant updates
+3. **Testing**: Test both applications independently
+4. **Deployment**: Deploy frontend and backend separately
 
 ## Configuration
 
-### API Keys
+### API Configuration
+- Database connection strings in `appsettings.json`
+- Alpha Vantage API key configuration
+- CORS settings for frontend access
 
-To use the Alpha Vantage API, you need to obtain an API key from [Alpha Vantage](https://www.alphavantage.co/support/#api-key) and add it to the configuration:
+### Frontend Configuration
+- API proxy configuration in `package.json`
+- Environment variables for API endpoints
 
-```json
-"AlphaVantage": {
-  "ApiKey": "your-api-key-here"
-}
+## Docker Support
+
+The project includes Docker configuration for:
+- SQL Server database
+- API application
+- Worker service
+
+```bash
+# Start all services with Docker Compose
+docker-compose up -d
 ```
 
-### Database
+## Technologies Used
 
-The application uses SQL Server by default. Update the connection string in appsettings.json:
+### Backend
+- .NET 9
+- Entity Framework Core
+- SQL Server
+- Swagger/OpenAPI
+- Background Services
+- HttpClient
 
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=your-server;Database=StockDataDb;Trusted_Connection=True;MultipleActiveResultSets=true"
-}
-```
+### Frontend
+- React 18
+- TypeScript
+- Chart.js
+- Moment.js
+- CSS Modules
 
-## Running the Application
+## Contributing
 
-### Using .NET CLI
+1. Make changes to the appropriate application (API or Frontend)
+2. Test changes independently
+3. Ensure both applications work together
+4. Update documentation as needed
 
-1. Ensure you have .NET 9.0 SDK installed
-2. Update the connection string in appsettings.json
-3. Run the database migrations: `dotnet ef database update`
-4. Start the API: `dotnet run --project src/StockDataApi/StockDataApi.csproj`
-5. Start the worker service: `dotnet run --project src/StockDataWorker/StockDataWorker.csproj`
+## License
 
-### Using Docker
-
-The application can be run using Docker and Docker Compose:
-
-1. Ensure you have Docker and Docker Compose installed
-2. Build and start the containers:
-   ```
-   docker-compose up -d
-   ```
-3. The API will be available at http://localhost:5000
-4. To stop the containers:
-   ```
-   docker-compose down
-   ```
-
-#### Docker Components
-
-- **SQL Server**: Microsoft SQL Server 2022 Express
-- **API**: ASP.NET Core Web API
-- **Worker**: Background service for data fetching
-
-## Testing
-
-Use the included PowerShell script to test the API endpoints:
-
-```
-./test-api.ps1
-```
-
-When using Docker, update the base URL in the test script to:
-```powershell
-$baseUrl = "http://localhost:5000/api"# share-squeezer
-# short-squeezer
+This project is for educational and development purposes.

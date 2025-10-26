@@ -1,0 +1,27 @@
+{
+  "name": "stock-data-frontend",
+  "version": "1.0.0",
+  "description": "Stock Data Dashboard Frontend",
+  "private": true,
+  "dependencies": {
+    "@types/node": "^16.18.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "chart.js": "^4.5.1",
+    "moment": "^2.29.4",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^4.9.0",
+    "web-vitals": "^2.1.0"
+  },
+  "scripts": {
+    "start": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "eject": "echo \"No eject needed with custom webpack config\"",
+    "watch": "webpack serve --mode development",
+    "dev": "webpack serve --mode development"
+  },
+  "proxy": "http://localhost:5000"
+}
