@@ -1,0 +1,143 @@
+/* FINRA Chart Styles */
+
+.finra-chart-container {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+}
+
+.finra-chart-container:last-child {
+  margin-bottom: 0;
+}
+
+.finra-chart-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1f2937;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.finra-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.finra-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: #ef4444;
+  font-size: 14px;
+}
+
+.finra-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.finra-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.finra-stat-card {
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.finra-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.finra-stat-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Stat Card Colors */
+.finra-stat-red {
+  background-color: #fef2f2;
+}
+
+.finra-stat-red .finra-stat-value {
+  color: #dc2626;
+}
+
+.finra-stat-orange {
+  background-color: #fff7ed;
+}
+
+.finra-stat-orange .finra-stat-value {
+  color: #ea580c;
+}
+
+.finra-stat-blue {
+  background-color: #eff6ff;
+}
+
+.finra-stat-blue .finra-stat-value {
+  color: #2563eb;
+}
+
+.finra-stat-green {
+  background-color: #f0fdf4;
+}
+
+.finra-stat-green .finra-stat-value {
+  color: #16a34a;
+}
+
+/* Spacing for chart containers */
+.finra-charts-container > div {
+  margin-bottom: 15px;
+}
+
+.finra-charts-container > div:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .finra-chart-container {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  .finra-chart-title {
+    font-size: 1.125rem;
+    margin-bottom: 15px;
+  }
+
+  .finra-summary-stats {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .finra-stat-card {
+    padding: 15px;
+  }
+
+  .finra-stat-value {
+    font-size: 1.5rem;
+  }
+}

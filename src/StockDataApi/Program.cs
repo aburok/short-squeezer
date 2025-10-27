@@ -69,6 +69,7 @@ builder.Services.AddScoped<IChartExchangeService, ChartExchangeService>();
 builder.Services.AddScoped<IAlphaVantageService, AlphaVantageService>();
 builder.Services.AddScoped<ITickerService, TickerService>();
 builder.Services.AddScoped<IFinraService, FinraService>();
+builder.Services.AddScoped<IInteractiveBrokersService, InteractiveBrokersService>();
 
 // Configure Alpha Vantage options
 builder.Services.Configure<AlphaVantageOptions>(
@@ -77,6 +78,10 @@ builder.Services.Configure<AlphaVantageOptions>(
 // Configure FINRA options
 builder.Services.Configure<FinraOptions>(
     builder.Configuration.GetSection("Finra"));
+
+// Configure Interactive Brokers options
+builder.Services.Configure<InteractiveBrokersOptions>(
+    builder.Configuration.GetSection("InteractiveBrokers"));
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();

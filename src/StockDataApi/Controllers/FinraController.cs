@@ -467,6 +467,56 @@ namespace StockDataApi.Controllers
                 return StatusCode(500, "An error occurred while retrieving the data");
             }
         }
+
+        /// <summary>
+        /// Fetches and stores FINRA blocks summary data
+        /// </summary>
+        /// <param name="startDate">Optional start date filter</param>
+        /// <param name="endDate">Optional end date filter</param>
+        /// <param name="symbol">Optional symbol (MPID) filter</param>
+        /// <returns>A list of blocks summary data points</returns>
+        [HttpPost("blocks-summary/fetch")]
+        public async Task<ActionResult<object>> FetchBlocksSummaryData(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] string? symbol = null)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching FINRA blocks summary data...");
+                
+                // Fetch data from FINRA API
+                var finraData = await _finraService.GetBlocksSummaryDataAsync(startDate, endDate, symbol);
+                
+                if (!finraData.Any())
+                {
+                    _logger.LogWarning("No FINRA blocks summary data found");
+                    return new { 
+                        success = false, 
+                        message = "No data found", 
+                        count = 0 
+                    };
+                }
+
+                _logger.LogInformation("Retrieved {Count} blocks summary data points from FINRA", finraData.Count);
+                
+                return new { 
+                    success = true, 
+                    message = $"Successfully fetched {finraData.Count} data points", 
+                    count = finraData.Count,
+                    data = finraData 
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching FINRA blocks summary data");
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "An error occurred while fetching the data",
+                    error = ex.Message 
+                });
+            }
+        }
     }
 
     /// <summary>

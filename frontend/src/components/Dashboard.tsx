@@ -18,6 +18,8 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
+  const [isFetchingBlocks, setIsFetchingBlocks] = useState(false);
+  const [isFetchingIB, setIsFetchingIB] = useState(false);
 
   const handleTickerSelect = (ticker: string) => {
     setSelectedTicker(ticker);
@@ -49,6 +51,77 @@ const Dashboard = () => {
       setError('Error refreshing tickers: ' + (err as Error).message);
     } finally {
       setIsRefreshingAll(false);
+    }
+  };
+
+  const handleFetchBlocksSummary = async () => {
+    setIsFetchingBlocks(true);
+    setError('');
+    
+    try {
+      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
+      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      
+      const response = await fetch(
+        `/api/Finra/blocks-summary/fetch?startDate=${startDateStr}&endDate=${endDateStr}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setError(`Successfully fetched ${result.count} blocks summary data points!`);
+      } else {
+        setError(result.message || 'Failed to fetch blocks summary data');
+      }
+    } catch (err) {
+      setError('Error fetching blocks summary: ' + (err as Error).message);
+    } finally {
+      setIsFetchingBlocks(false);
+    }
+  };
+
+  const handleFetchIBData = async () => {
+    if (!selectedTicker) {
+      setError('Please select a ticker first');
+      return;
+    }
+
+    setIsFetchingIB(true);
+    setError('');
+    
+    try {
+      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
+      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      
+      const response = await fetch(
+        `/api/InteractiveBrokers/${selectedTicker}/fetch?startDate=${startDateStr}&endDate=${endDateStr}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setError(`Successfully fetched ${result.count} Interactive Brokers data points for ${selectedTicker}!`);
+        // Refresh the chart data
+        fetchData();
+      } else {
+        setError(result.message || 'Failed to fetch IB data');
+      }
+    } catch (err) {
+      setError('Error fetching IB data: ' + (err as Error).message);
+    } finally {
+      setIsFetchingIB(false);
     }
   };
 
@@ -96,11 +169,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>Stock Data Dashboard</h1>
-        <p>Analyze short interest and volume data for stocks</p>
-      </header>
-
       <div className="dashboard-controls">
         <div className="ticker-controls-row">
           <TickerSearch onTickerSelect={handleTickerSelect} />
@@ -120,6 +188,24 @@ const Dashboard = () => {
               className="refresh-all-button"
             >
               {isRefreshingAll ? 'Refreshing...' : 'Refresh All Tickers'}
+            </button>
+
+            <button 
+              onClick={handleFetchBlocksSummary} 
+              disabled={isFetchingBlocks}
+              className="refresh-all-button"
+              style={{ marginLeft: '10px' }}
+            >
+              {isFetchingBlocks ? 'Fetching...' : 'Fetch FINRA Blocks Summary'}
+            </button>
+
+            <button 
+              onClick={handleFetchIBData} 
+              disabled={!selectedTicker || isFetchingIB}
+              className="refresh-all-button"
+              style={{ marginLeft: '10px' }}
+            >
+              {isFetchingIB ? 'Fetching...' : 'Fetch IB Data'}
             </button>
           </div>
         </div>

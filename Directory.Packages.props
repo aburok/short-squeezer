@@ -15,6 +15,7 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <!-- Utilities -->
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <!-- Docker -->
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
     <!-- Test Projects -->

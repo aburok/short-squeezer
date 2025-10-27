@@ -24,6 +24,8 @@ services:
     build:
       context: .
       dockerfile: src/StockDataApi/Dockerfile
+      cache_from:
+        - mcr.microsoft.com/dotnet/sdk:9.0
     ports:
       - "80:80"
       - "443:443"
@@ -41,6 +43,8 @@ services:
     build:
       context: .
       dockerfile: src/StockDataWorker/Dockerfile
+      cache_from:
+        - mcr.microsoft.com/dotnet/sdk:9.0
     environment:
       - DOTNET_ENVIRONMENT=Development
       - AlphaVantage__ApiKey=demo

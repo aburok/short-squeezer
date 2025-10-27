@@ -14,6 +14,7 @@ import {
   AreaChart,
   ComposedChart
 } from 'recharts';
+import './FinraShortInterestChart.css';
 
 interface FinraShortInterestData {
   date: string;
@@ -110,24 +111,24 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading FINRA data...</div>
+      <div className="finra-chart-container">
+        <div className="finra-loading">Loading FINRA data...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Error: {error}</div>
+      <div className="finra-chart-container">
+        <div className="finra-error">Error: {error}</div>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">No FINRA data available for {symbol}</div>
+      <div className="finra-chart-container">
+        <div className="finra-empty">No FINRA data available for {symbol}</div>
       </div>
     );
   }
@@ -142,13 +143,13 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
   }));
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Short Interest Percentage Chart */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+      <div className="finra-chart-container">
+        <h3 className="finra-chart-title">
           Short Interest Percentage - {symbol}
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -156,7 +157,7 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
             />
             <YAxis 
               tick={{ fontSize: 12 }}
@@ -180,11 +181,11 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
       </div>
 
       {/* Days to Cover Chart */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+      <div className="finra-chart-container">
+        <h3 className="finra-chart-title">
           Days to Cover - {symbol}
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -192,7 +193,7 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
             />
             <YAxis 
               tick={{ fontSize: 12 }}
@@ -217,11 +218,11 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
       </div>
 
       {/* Market Value Chart */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+      <div className="finra-chart-container">
+        <h3 className="finra-chart-title">
           Short Interest Market Value - {symbol}
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -229,7 +230,7 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
             />
             <YAxis 
               tick={{ fontSize: 12 }}
@@ -250,11 +251,11 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
       </div>
 
       {/* Shares Outstanding vs Short Interest Chart */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+      <div className="finra-chart-container">
+        <h3 className="finra-chart-title">
           Shares Outstanding vs Short Interest - {symbol}
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -262,7 +263,7 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
             />
             <YAxis 
               yAxisId="left"
@@ -303,11 +304,11 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
       </div>
 
       {/* Average Daily Volume Chart */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+      <div className="finra-chart-container">
+        <h3 className="finra-chart-title">
           Average Daily Volume - {symbol}
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -315,7 +316,7 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
             />
             <YAxis 
               tick={{ fontSize: 12 }}
@@ -340,34 +341,34 @@ const FinraShortInterestChart: React.FC<FinraShortInterestChartProps> = ({
       </div>
 
       {/* Summary Statistics */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+      <div className="finra-chart-container">
+        <h3 className="finra-chart-title">
           Summary Statistics - {symbol}
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">
+        <div className="finra-summary-stats">
+          <div className="finra-stat-card finra-stat-red">
+            <div className="finra-stat-value">
               {data.length > 0 ? data[data.length - 1].shortInterestPercent.toFixed(2) : 'N/A'}%
             </div>
-            <div className="text-sm text-gray-600">Latest Short Interest %</div>
+            <div className="finra-stat-label">Latest Short Interest %</div>
           </div>
-          <div className="text-center p-4 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">
+          <div className="finra-stat-card finra-stat-orange">
+            <div className="finra-stat-value">
               {data.length > 0 ? data[data.length - 1].days2Cover.toFixed(1) : 'N/A'}
             </div>
-            <div className="text-sm text-gray-600">Days to Cover</div>
+            <div className="finra-stat-label">Days to Cover</div>
           </div>
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">
+          <div className="finra-stat-card finra-stat-blue">
+            <div className="finra-stat-value">
               {data.length > 0 ? formatCurrency(data[data.length - 1].marketValue) : 'N/A'}
             </div>
-            <div className="text-sm text-gray-600">Market Value</div>
+            <div className="finra-stat-label">Market Value</div>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">
+          <div className="finra-stat-card finra-stat-green">
+            <div className="finra-stat-value">
               {data.length > 0 ? formatNumber(data[data.length - 1].shortInterest) : 'N/A'}
             </div>
-            <div className="text-sm text-gray-600">Short Interest</div>
+            <div className="finra-stat-label">Short Interest</div>
           </div>
         </div>
       </div>

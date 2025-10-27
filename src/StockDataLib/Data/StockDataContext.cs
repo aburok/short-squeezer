@@ -18,6 +18,7 @@ namespace StockDataLib.Data
         public DbSet<BorrowFeeData> BorrowFeeData { get; set; }
         public DbSet<RedditMentionData> RedditMentionData { get; set; }
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
+        public DbSet<InteractiveBrokersPriceData> InteractiveBrokersPriceData { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -70,6 +71,7 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<BorrowFeeData>(modelBuilder);
             ConfigureStockDataPoint<RedditMentionData>(modelBuilder);
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
+            ConfigureStockDataPoint<InteractiveBrokersPriceData>(modelBuilder);
 
             // Configure specific navigation properties
             modelBuilder.Entity<StockTicker>()
@@ -109,6 +111,11 @@ namespace StockDataLib.Data
 
             modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.FinraShortInterestData)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.InteractiveBrokersPriceData)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
         }

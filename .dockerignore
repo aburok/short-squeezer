@@ -1,0 +1,16 @@
+# Docker build cache configuration
+# This file is used to configure NuGet package caching across builds
+
+# Instructions for using this cache:
+# 1. Build with BuildKit enabled: DOCKER_BUILDKIT=1 docker build ...
+# 2. Use BuildKit cache mount for maximum efficiency
+# 3. For docker-compose: COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
+
+# The Dockerfiles have been optimized with:
+# - Layer caching for restore steps
+# - NUGET_PACKAGES environment variable
+# - Copy project files before code files
+# - --verbosity quiet and --no-restore flags
+
+# To clear the cache:
+# docker builder prune -af
