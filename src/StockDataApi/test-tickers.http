@@ -1,4 +1,4 @@
-@baseUrl = http://192.168.200.2:80
+@baseUrl = http://localhost:80
 
 ### Get all tickers
 GET {{baseUrl}}/api/tickers

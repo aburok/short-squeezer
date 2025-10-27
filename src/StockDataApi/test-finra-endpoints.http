@@ -1,0 +1,42 @@
+### FINRA Short Interest API Endpoints
+
+### Get FINRA short interest data for a specific ticker
+GET http://localhost:80/api/finra/short-interest/AAPL
+Accept: application/json
+
+### Get FINRA short interest data for a specific ticker with date range
+GET http://localhost:80/api/finra/short-interest/AAPL?startDate=2024-01-01&endDate=2024-12-31
+Accept: application/json
+
+### Get latest FINRA short interest data for a specific ticker
+GET http://localhost:80/api/finra/short-interest/AAPL/latest
+Accept: application/json
+
+### Refresh FINRA short interest data for a specific ticker
+POST http://localhost:80/api/finra/short-interest/AAPL/refresh
+Accept: application/json
+
+### Refresh FINRA short interest data for a specific ticker with date range
+POST http://localhost:80/api/finra/short-interest/AAPL/refresh?startDate=2024-01-01&endDate=2024-12-31
+Accept: application/json
+
+### Get all FINRA short interest data (bulk)
+GET http://localhost:80/api/finra/short-interest?limit=100
+Accept: application/json
+
+### Get all FINRA short interest data with date range
+GET http://localhost:80/api/finra/short-interest?startDate=2024-01-01&endDate=2024-12-31&limit=1000
+Accept: application/json
+
+### Test with other popular tickers
+GET http://localhost:80/api/finra/short-interest/TSLA
+Accept: application/json
+
+GET http://localhost:80/api/finra/short-interest/GME
+Accept: application/json
+
+GET http://localhost:80/api/finra/short-interest/AMC
+Accept: application/json
+
+GET http://localhost:80/api/finra/short-interest/MSFT
+Accept: application/json

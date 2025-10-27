@@ -69,7 +69,7 @@ namespace StockDataApi.Controllers
 
                 // Query for price data
                 var query = _context.PriceData
-                    .Where(d => d.StockTickerId == ticker.Id);
+                    .Where(d => d.StockTickerSymbol == symbol);
 
                 // Apply date filters if provided
                 if (startDate.HasValue)
@@ -146,7 +146,7 @@ namespace StockDataApi.Controllers
 
                 // Get the latest price data
                 var latestData = await _context.PriceData
-                    .Where(d => d.StockTickerId == ticker.Id)
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .OrderByDescending(d => d.Date)
                     .Select(d => new PriceDataDto
                     {

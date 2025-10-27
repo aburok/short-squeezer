@@ -8,10 +8,9 @@ namespace StockDataLib.Models
     /// </summary>
     public class StockTicker
     {
-        public int Id { get; set; }
-        public string Symbol { get; set; }
-        public string Exchange { get; set; }
-        public string Name { get; set; }
+        public string Symbol { get; set; } = string.Empty;
+        public string Exchange { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public DateTime LastUpdated { get; set; }
         
         // Navigation properties
@@ -22,6 +21,7 @@ namespace StockDataLib.Models
         public ICollection<ShortInterestData> ShortInterestData { get; set; }
         public ICollection<BorrowFeeData> BorrowFeeData { get; set; }
         public ICollection<RedditMentionData> RedditMentionData { get; set; }
+        public ICollection<FinraShortInterestData> FinraShortInterestData { get; set; }
     }
 
     /// <summary>
@@ -30,11 +30,11 @@ namespace StockDataLib.Models
     public abstract class StockDataPoint
     {
         public int Id { get; set; }
-        public int StockTickerId { get; set; }
+        public string StockTickerSymbol { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         
         // Navigation property
-        public StockTicker StockTicker { get; set; }
+        public StockTicker StockTicker { get; set; } = null!;
     }
 
     /// <summary>
@@ -99,6 +99,20 @@ namespace StockDataLib.Models
         public int Mentions { get; set; }
         public string? TopSubreddit { get; set; }
         public string? Sentiment { get; set; }
+    }
+
+    /// <summary>
+    /// Represents FINRA short interest data for a stock on a specific date
+    /// </summary>
+    public class FinraShortInterestData : StockDataPoint
+    {
+        public long ShortInterest { get; set; }
+        public decimal ShortInterestPercent { get; set; }
+        public decimal MarketValue { get; set; }
+        public long SharesOutstanding { get; set; }
+        public long AvgDailyVolume { get; set; }
+        public decimal Days2Cover { get; set; }
+        public DateTime SettlementDate { get; set; }
     }
 }
 

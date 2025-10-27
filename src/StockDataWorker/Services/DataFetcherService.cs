@@ -20,19 +20,22 @@ namespace StockDataWorker.Services
         private readonly DataFetcherOptions _options;
         private readonly IChartExchangeService _chartExchangeService;
         private readonly IAlphaVantageService _alphaVantageService;
+        private readonly IFinraService _finraService;
 
         public DataFetcherService(
             ILogger<DataFetcherService> logger,
             IServiceProvider serviceProvider,
             IOptions<DataFetcherOptions> options,
             IChartExchangeService chartExchangeService,
-            IAlphaVantageService alphaVantageService)
+            IAlphaVantageService alphaVantageService,
+            IFinraService finraService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
             _options = options.Value;
             _chartExchangeService = chartExchangeService;
             _alphaVantageService = alphaVantageService;
+            _finraService = finraService;
         }
 
         /// <summary>
@@ -91,6 +94,12 @@ namespace StockDataWorker.Services
                         await FetchPriceDataAsync(dbContext, ticker, stoppingToken);
                     }
 
+                    // Fetch FINRA short interest data
+                    if (_options.EnableFinraDataFetching)
+                    {
+                        await FetchFinraShortInterestDataAsync(dbContext, ticker, stoppingToken);
+                    }
+
                     // Update the last updated timestamp
                     ticker.LastUpdated = DateTime.UtcNow;
                     await dbContext.SaveChangesAsync(stoppingToken);
@@ -115,7 +124,7 @@ namespace StockDataWorker.Services
                 
                 if (borrowFeeData.Any())
                 {
-                    await UpdateBorrowFeeDataAsync(dbContext, ticker.Id, borrowFeeData, stoppingToken);
+                    await UpdateBorrowFeeDataAsync(dbContext, ticker.Symbol, borrowFeeData, stoppingToken);
                     _logger.LogInformation("Successfully updated borrow fee data for {Symbol}", ticker.Symbol);
                 }
                 else
@@ -139,7 +148,7 @@ namespace StockDataWorker.Services
                 
                 if (priceData.Any())
                 {
-                    await UpdatePriceDataAsync(dbContext, ticker.Id, priceData, stoppingToken);
+                    await UpdatePriceDataAsync(dbContext, ticker.Symbol, priceData, stoppingToken);
                     _logger.LogInformation("Successfully updated price data for {Symbol}", ticker.Symbol);
                 }
                 else
@@ -150,6 +159,32 @@ namespace StockDataWorker.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching price data for {Symbol}", ticker.Symbol);
+            }
+        }
+
+        private async Task FetchFinraShortInterestDataAsync(StockDataContext dbContext, StockTicker ticker, CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Fetching FINRA short interest data for {Symbol}", ticker.Symbol);
+            
+            try
+            {
+                // Get data from the last 6 months to ensure we have recent data
+                var startDate = DateTime.UtcNow.AddMonths(-6);
+                var finraData = await _finraService.GetShortInterestDataAsync(ticker.Symbol, startDate, null);
+                
+                if (finraData.Any())
+                {
+                    await UpdateFinraShortInterestDataAsync(dbContext, ticker.Symbol, finraData, stoppingToken);
+                    _logger.LogInformation("Successfully updated FINRA short interest data for {Symbol}", ticker.Symbol);
+                }
+                else
+                {
+                    _logger.LogWarning("No FINRA short interest data found for {Symbol}", ticker.Symbol);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching FINRA short interest data for {Symbol}", ticker.Symbol);
             }
         }
 
@@ -179,20 +214,20 @@ namespace StockDataWorker.Services
 
         private async Task UpdateBorrowFeeDataAsync(
             StockDataContext dbContext, 
-            int tickerId, 
+            string tickerSymbol, 
             List<BorrowFeeData> newData, 
             CancellationToken stoppingToken)
         {
             // Get existing data for this ticker
             var existingData = await dbContext.BorrowFeeData
-                .Where(d => d.StockTickerId == tickerId)
+                .Where(d => d.StockTickerSymbol == tickerSymbol)
                 .ToDictionaryAsync(d => d.Date.Date, d => d, stoppingToken);
 
             // Process new data
             foreach (var dataPoint in newData)
             {
-                // Set the ticker ID
-                dataPoint.StockTickerId = tickerId;
+                // Set the ticker symbol
+                dataPoint.StockTickerSymbol = tickerSymbol;
                 
                 // Normalize the date to remove time component
                 var dateKey = dataPoint.Date.Date;
@@ -221,20 +256,20 @@ namespace StockDataWorker.Services
 
         private async Task UpdatePriceDataAsync(
             StockDataContext dbContext,
-            int tickerId,
+            string tickerSymbol,
             List<PriceData> newData,
             CancellationToken stoppingToken)
         {
             // Get existing data for this ticker
             var existingData = await dbContext.PriceData
-                .Where(d => d.StockTickerId == tickerId)
+                .Where(d => d.StockTickerSymbol == tickerSymbol)
                 .ToDictionaryAsync(d => d.Date.Date, d => d, stoppingToken);
 
             // Process new data
             foreach (var dataPoint in newData)
             {
-                // Set the ticker ID
-                dataPoint.StockTickerId = tickerId;
+                // Set the ticker symbol
+                dataPoint.StockTickerSymbol = tickerSymbol;
                 
                 // Normalize the date to remove time component
                 var dateKey = dataPoint.Date.Date;
@@ -265,6 +300,66 @@ namespace StockDataWorker.Services
             // Save changes
             await dbContext.SaveChangesAsync(stoppingToken);
         }
+
+        private async Task UpdateFinraShortInterestDataAsync(
+            StockDataContext dbContext,
+            string tickerSymbol,
+            List<StockDataLib.Services.FinraApiResponseData> newData,
+            CancellationToken stoppingToken)
+        {
+            // Get existing data for this ticker
+            var existingData = await dbContext.FinraShortInterestData
+                .Where(d => d.StockTickerSymbol == tickerSymbol)
+                .ToDictionaryAsync(d => d.SettlementDate.Date, d => d, stoppingToken);
+
+            // Process new data
+            foreach (var dataPoint in newData)
+            {
+                // Normalize the date to remove time component
+                var dateKey = dataPoint.SettlementDate.Date;
+
+                // Check if we already have data for this date
+                if (existingData.TryGetValue(dateKey, out var existingPoint))
+                {
+                    // Update existing data if any value is different
+                    if (existingPoint.ShortInterest != dataPoint.ShortInterest ||
+                        existingPoint.ShortInterestPercent != dataPoint.ShortInterestPercent ||
+                        existingPoint.MarketValue != dataPoint.MarketValue ||
+                        existingPoint.SharesOutstanding != dataPoint.SharesOutstanding ||
+                        existingPoint.AvgDailyVolume != dataPoint.AvgDailyVolume ||
+                        existingPoint.Days2Cover != dataPoint.Days2Cover)
+                    {
+                        existingPoint.ShortInterest = dataPoint.ShortInterest;
+                        existingPoint.ShortInterestPercent = dataPoint.ShortInterestPercent;
+                        existingPoint.MarketValue = dataPoint.MarketValue;
+                        existingPoint.SharesOutstanding = dataPoint.SharesOutstanding;
+                        existingPoint.AvgDailyVolume = dataPoint.AvgDailyVolume;
+                        existingPoint.Days2Cover = dataPoint.Days2Cover;
+                        dbContext.FinraShortInterestData.Update(existingPoint);
+                    }
+                }
+                else
+                {
+                    // Add new data point
+                    var dbItem = new FinraShortInterestData
+                    {
+                        StockTickerSymbol = tickerSymbol,
+                        Date = dataPoint.SettlementDate,
+                        SettlementDate = dataPoint.SettlementDate,
+                        ShortInterest = dataPoint.ShortInterest,
+                        ShortInterestPercent = dataPoint.ShortInterestPercent,
+                        MarketValue = dataPoint.MarketValue,
+                        SharesOutstanding = dataPoint.SharesOutstanding,
+                        AvgDailyVolume = dataPoint.AvgDailyVolume,
+                        Days2Cover = dataPoint.Days2Cover
+                    };
+                    dbContext.FinraShortInterestData.Add(dbItem);
+                }
+            }
+
+            // Save changes
+            await dbContext.SaveChangesAsync(stoppingToken);
+        }
     }
 
     public class DataFetcherOptions
@@ -273,6 +368,7 @@ namespace StockDataWorker.Services
         public int DelayBetweenRequestsSeconds { get; set; } = 5; // Default to 5 seconds
         public bool EnableBorrowFeeDataFetching { get; set; } = true;
         public bool EnablePriceDataFetching { get; set; } = true;
+        public bool EnableFinraDataFetching { get; set; } = true;
     }
 }
 

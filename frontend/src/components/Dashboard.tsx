@@ -3,6 +3,8 @@ import TickerSearch from './TickerSearch';
 import MovableDateRangePicker from './MovableDateRangePicker';
 import ShortInterestChart from './ShortInterestChart';
 import ShortVolumeChart from './ShortVolumeChart';
+import BorrowFeeChart from './BorrowFeeChart';
+import FinraShortInterestChart from './FinraShortInterestChart';
 
 const Dashboard = () => {
   const [selectedTicker, setSelectedTicker] = useState('');
@@ -12,6 +14,7 @@ const Dashboard = () => {
   });
   const [shortInterestData, setShortInterestData] = useState([]);
   const [shortVolumeData, setShortVolumeData] = useState([]);
+  const [borrowFeeData, setBorrowFeeData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
@@ -72,6 +75,13 @@ const Dashboard = () => {
       );
       const shortVolumeResult = await shortVolumeResponse.json();
       setShortVolumeData(shortVolumeResult);
+
+      // Fetch borrow fee data
+      const borrowFeeResponse = await fetch(
+        `/api/BorrowFee/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}`
+      );
+      const borrowFeeResult = await borrowFeeResponse.json();
+      setBorrowFeeData(borrowFeeResult);
 
     } catch (err) {
       setError('Error fetching data: ' + (err as Error).message);
@@ -140,6 +150,27 @@ const Dashboard = () => {
               data={shortVolumeData} 
               ticker={selectedTicker}
               isLoading={isLoading}
+            />
+          </div>
+          
+          <div className="chart-container">
+            <BorrowFeeChart 
+              data={borrowFeeData} 
+              ticker={selectedTicker}
+              isLoading={isLoading}
+            />
+          </div>
+
+          {/* FINRA Data Section */}
+          <div className="finra-section">
+            <div className="section-header">
+              <h2>FINRA Regulatory Data</h2>
+              <p>Official short interest data from FINRA regulatory database</p>
+            </div>
+            <FinraShortInterestChart
+              symbol={selectedTicker}
+              startDate={dateRange.startDate.toISOString().split('T')[0]}
+              endDate={dateRange.endDate.toISOString().split('T')[0]}
             />
           </div>
         </div>

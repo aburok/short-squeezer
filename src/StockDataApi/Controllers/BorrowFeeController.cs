@@ -69,7 +69,7 @@ namespace StockDataApi.Controllers
 
                 // Query for borrow fee data
                 var query = _context.BorrowFeeData
-                    .Where(d => d.StockTickerId == ticker.Id);
+                    .Where(d => d.StockTickerSymbol == symbol);
 
                 // Apply date filters if provided
                 if (startDate.HasValue)
@@ -144,7 +144,7 @@ namespace StockDataApi.Controllers
 
                 // Get the latest borrow fee data
                 var latestData = await _context.BorrowFeeData
-                    .Where(d => d.StockTickerId == ticker.Id)
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .OrderByDescending(d => d.Date)
                     .Select(d => new BorrowFeeDataDto
                     {

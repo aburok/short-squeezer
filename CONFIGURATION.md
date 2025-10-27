@@ -146,3 +146,5 @@ dotnet run --project src/StockDataApi
 # Start with Docker Compose (uses environment variables from docker-compose.yml)
 docker-compose up
 ```
+
+

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockDataLib.Data;
 
@@ -11,9 +12,11 @@ using StockDataLib.Data;
 namespace StockDataLib.Migrations
 {
     [DbContext(typeof(StockDataContext))]
-    partial class StockDataContextModelSnapshot : ModelSnapshot
+    [Migration("20251026204540_UseTickerSymbolAsPrimaryKey")]
+    partial class UseTickerSymbolAsPrimaryKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,51 +53,6 @@ namespace StockDataLib.Migrations
                         .IsUnique();
 
                     b.ToTable("BorrowFeeData");
-                });
-
-            modelBuilder.Entity("StockDataLib.Models.FinraShortInterestData", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("AvgDailyVolume")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Days2Cover")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MarketValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SettlementDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("SharesOutstanding")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ShortInterest")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("ShortInterestPercent")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("StockTickerSymbol")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StockTickerSymbol", "Date")
-                        .IsUnique();
-
-                    b.ToTable("FinraShortInterestData");
                 });
 
             modelBuilder.Entity("StockDataLib.Models.PriceData", b =>
@@ -315,17 +273,6 @@ namespace StockDataLib.Migrations
                     b.Navigation("StockTicker");
                 });
 
-            modelBuilder.Entity("StockDataLib.Models.FinraShortInterestData", b =>
-                {
-                    b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
-                        .WithMany("FinraShortInterestData")
-                        .HasForeignKey("StockTickerSymbol")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StockTicker");
-                });
-
             modelBuilder.Entity("StockDataLib.Models.PriceData", b =>
                 {
                     b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
@@ -395,8 +342,6 @@ namespace StockDataLib.Migrations
             modelBuilder.Entity("StockDataLib.Models.StockTicker", b =>
                 {
                     b.Navigation("BorrowFeeData");
-
-                    b.Navigation("FinraShortInterestData");
 
                     b.Navigation("PriceData");
 

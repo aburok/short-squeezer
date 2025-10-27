@@ -6,8 +6,29 @@ using System;
 using System.IO;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using StockDataLib;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var configBuilder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", true, true)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args)
+    .Build();
+
+void ConfigLogger(ILoggingBuilder loggerBuilder)
+{
+    loggerBuilder.AddConsole();
+}
+
+var loggerFactory = LoggerFactory.Create(ConfigLogger);
+
+var logger = loggerFactory.CreateLogger<Program>();
+
+builder.Configuration.ShowConfiguration(logger);
+
+builder.Configuration.AddConfiguration(configBuilder);
 
 // Configure Kestrel to listen on all IP addresses
 builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -47,10 +68,15 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IChartExchangeService, ChartExchangeService>();
 builder.Services.AddScoped<IAlphaVantageService, AlphaVantageService>();
 builder.Services.AddScoped<ITickerService, TickerService>();
+builder.Services.AddScoped<IFinraService, FinraService>();
 
 // Configure Alpha Vantage options
 builder.Services.Configure<AlphaVantageOptions>(
     builder.Configuration.GetSection("AlphaVantage"));
+
+// Configure FINRA options
+builder.Services.Configure<FinraOptions>(
+    builder.Configuration.GetSection("Finra"));
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -94,6 +120,7 @@ Console.WriteLine("📄 APPSETTINGS.JSON CONFIGURATION:");
 DisplayConfigurationSection(builder.Configuration, "Logging");
 DisplayConfigurationSection(builder.Configuration, "AllowedHosts");
 DisplayConfigurationSection(builder.Configuration, "AlphaVantage");
+DisplayConfigurationSection(builder.Configuration, "Finra");
 Console.WriteLine();
 
 // Display connection strings
@@ -137,6 +164,7 @@ Console.WriteLine("  ✅ CORS (permissive)");
 Console.WriteLine("  ✅ Chart Exchange Service");
 Console.WriteLine("  ✅ Alpha Vantage Service");
 Console.WriteLine("  ✅ Ticker Service");
+Console.WriteLine("  ✅ FINRA Service");
 Console.WriteLine("  ✅ Swagger/OpenAPI");
 Console.WriteLine();
 
@@ -289,6 +317,7 @@ static void DisplayEnvironmentVariables()
         "DOTNET_ENVIRONMENT",
         "ConnectionStrings__DefaultConnection",
         "AlphaVantage__ApiKey",
+        "Finra__ApiKey",
         "ASPNETCORE_ENVIRONMENT",
         "ASPNETCORE_CONTENTROOT",
         "ASPNETCORE_WEBROOT"

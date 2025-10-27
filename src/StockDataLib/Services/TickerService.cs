@@ -338,7 +338,7 @@ namespace StockDataLib.Services
                 {
                     // Get existing data dates to avoid duplicates
                     var existingDates = await _context.ShortVolumeData
-                        .Where(d => d.StockTickerId == ticker.Id)
+                        .Where(d => d.StockTickerSymbol == symbol)
                         .Select(d => d.Date.Date)
                         .ToListAsync();
                     
@@ -349,7 +349,7 @@ namespace StockDataLib.Services
                     {
                         if (!existingDates.Contains(item.Date.Date))
                         {
-                            item.StockTickerId = ticker.Id;
+                            item.StockTickerSymbol = symbol;
                             _context.ShortVolumeData.Add(item);
                             addedCount++;
                         }
@@ -368,7 +368,7 @@ namespace StockDataLib.Services
                 {
                     // Get existing data dates to avoid duplicates
                     var existingDates = await _context.ShortInterestData
-                        .Where(d => d.StockTickerId == ticker.Id)
+                        .Where(d => d.StockTickerSymbol == symbol)
                         .Select(d => d.Date.Date)
                         .ToListAsync();
                     
@@ -379,7 +379,7 @@ namespace StockDataLib.Services
                     {
                         if (!existingDates.Contains(item.Date.Date))
                         {
-                            item.StockTickerId = ticker.Id;
+                            item.StockTickerSymbol = symbol;
                             _context.ShortInterestData.Add(item);
                             addedCount++;
                         }
@@ -398,7 +398,7 @@ namespace StockDataLib.Services
                 {
                     // Get existing data dates to avoid duplicates
                     var existingDates = await _context.BorrowFeeData
-                        .Where(d => d.StockTickerId == ticker.Id)
+                        .Where(d => d.StockTickerSymbol == symbol)
                         .Select(d => d.Date.Date)
                         .ToListAsync();
                     
@@ -409,7 +409,7 @@ namespace StockDataLib.Services
                     {
                         if (!existingDates.Contains(item.Date.Date))
                         {
-                            item.StockTickerId = ticker.Id;
+                            item.StockTickerSymbol = symbol;
                             _context.BorrowFeeData.Add(item);
                             addedCount++;
                         }

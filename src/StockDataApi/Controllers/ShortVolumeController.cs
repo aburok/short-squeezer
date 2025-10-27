@@ -73,7 +73,7 @@ namespace StockDataApi.Controllers
 
                 // Query for short volume data
                 var query = _context.ShortVolumeData
-                    .Where(d => d.StockTickerId == ticker.Id);
+                    .Where(d => d.StockTickerSymbol == symbol);
 
                 // Apply date filters if provided
                 if (startDate.HasValue)
@@ -112,7 +112,7 @@ namespace StockDataApi.Controllers
                         // Save to database
                         foreach (var item in chartExchangeData)
                         {
-                            item.StockTickerId = ticker.Id;
+                            item.StockTickerSymbol = symbol;
                             _context.ShortVolumeData.Add(item);
                         }
                         
@@ -182,7 +182,7 @@ namespace StockDataApi.Controllers
 
                 // Get the latest short volume data
                 var latestData = await _context.ShortVolumeData
-                    .Where(d => d.StockTickerId == ticker.Id)
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .OrderByDescending(d => d.Date)
                     .Select(d => new ShortVolumeDataDto
                     {
@@ -207,7 +207,7 @@ namespace StockDataApi.Controllers
                         // Save to database
                         foreach (var item in chartExchangeData)
                         {
-                            item.StockTickerId = ticker.Id;
+                            item.StockTickerSymbol = symbol;
                             _context.ShortVolumeData.Add(item);
                         }
                         
@@ -298,7 +298,7 @@ namespace StockDataApi.Controllers
 
                 // Get existing data dates to avoid duplicates
                 var existingDates = await _context.ShortVolumeData
-                    .Where(d => d.StockTickerId == ticker.Id)
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .Select(d => d.Date.Date)
                     .ToListAsync();
 
@@ -309,7 +309,7 @@ namespace StockDataApi.Controllers
                 {
                     if (!existingDates.Contains(item.Date.Date))
                     {
-                        item.StockTickerId = ticker.Id;
+                        item.StockTickerSymbol = symbol;
                         _context.ShortVolumeData.Add(item);
                         addedCount++;
                     }

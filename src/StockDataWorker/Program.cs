@@ -53,7 +53,14 @@ namespace StockDataWorker
                     
                     // Add services
                     services.AddScoped<IChartExchangeService, ChartExchangeService>();
+                    services.AddScoped<IAlphaVantageService, AlphaVantageService>();
                     services.AddScoped<ITickerService, TickerService>();
+                    services.AddScoped<IFinraService, FinraService>();
+                    
+                    // Configure options
+                    services.Configure<AlphaVantageOptions>(configuration.GetSection("AlphaVantage"));
+                    services.Configure<FinraOptions>(configuration.GetSection("Finra"));
+                    services.Configure<DataFetcherOptions>(configuration.GetSection("DataFetcher"));
                     
                     // Add background service
                     services.AddHostedService<TickerBackgroundService>();
