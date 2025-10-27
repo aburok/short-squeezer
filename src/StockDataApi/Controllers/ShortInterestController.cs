@@ -97,35 +97,8 @@ namespace StockDataApi.Controllers
                     })
                     .ToListAsync();
 
-                // If no data found, try to fetch from Chart Exchange
-                if (data.Count == 0 && symbol.Equals("SPY", StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogInformation("No short interest data found in database for SPY, fetching from Chart Exchange");
-                    var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
-                    
-                    if (chartExchangeData.Any())
-                    {
-                        // Save to database
-                        foreach (var item in chartExchangeData)
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.ShortInterestData.Add(item);
-                        }
-                        
-                        await _context.SaveChangesAsync();
-                        
-                        // Map to DTOs
-                        data = chartExchangeData
-                            .OrderBy(d => d.Date)
-                            .Select(d => new ShortInterestDataDto
-                            {
-                                Date = d.Date,
-                                ShortInterest = d.ShortInterest,
-                                SharesShort = d.SharesShort
-                            })
-                            .ToList();
-                    }
-                }
+                // If no data found in database, return empty list
+                // Data should be fetched from Polygon.io or FINRA instead
 
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
@@ -188,35 +161,8 @@ namespace StockDataApi.Controllers
                     })
                     .FirstOrDefaultAsync();
 
-                // If no data found, try to fetch from Chart Exchange for SPY
-                if (latestData == null && symbol.Equals("SPY", StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogInformation("No short interest data found in database for SPY, fetching from Chart Exchange");
-                    var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol, null, null);
-                    
-                    if (chartExchangeData.Any())
-                    {
-                        // Save to database
-                        foreach (var item in chartExchangeData)
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.ShortInterestData.Add(item);
-                        }
-                        
-                        await _context.SaveChangesAsync();
-                        
-                        // Get the latest data
-                        latestData = chartExchangeData
-                            .OrderByDescending(d => d.Date)
-                            .Select(d => new ShortInterestDataDto
-                            {
-                                Date = d.Date,
-                                ShortInterest = d.ShortInterest,
-                                SharesShort = d.SharesShort
-                            })
-                            .FirstOrDefault();
-                    }
-                }
+                // If no data found, return null
+                // Data should be fetched from Polygon.io or FINRA instead
 
                 if (latestData == null)
                 {
@@ -243,93 +189,15 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Refreshes short interest data for SPY from Chart Exchange
+        /// Refreshes short interest data for SPY (deprecated - use Polygon or FINRA instead)
         /// </summary>
-        /// <returns>The refreshed short interest data</returns>
+        /// <returns>Method not available</returns>
         [HttpPost("refresh/spy")]
-        public async Task<ActionResult<IEnumerable<ShortInterestDataDto>>> RefreshSpyShortInterestData(
+        public async Task<ActionResult> RefreshSpyShortInterestData(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            try
-            {
-                string symbol = "SPY";
-                
-                // Find the ticker
-                var ticker = await _context.StockTickers
-                    .FirstOrDefaultAsync(t => t.Symbol == symbol);
-
-                if (ticker == null)
-                {
-                    _logger.LogWarning("Ticker {Symbol} not found", symbol);
-                    return NotFound($"Ticker {symbol} not found");
-                }
-
-                // Fetch data from Chart Exchange
-                var chartExchangeData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
-                
-                // Log date range if provided
-                if (startDate.HasValue && endDate.HasValue)
-                {
-                    _logger.LogInformation("Using date range: {StartDate} to {EndDate}",
-                        startDate.Value.ToString("yyyy-MM-dd"),
-                        endDate.Value.ToString("yyyy-MM-dd"));
-                }
-                
-                if (!chartExchangeData.Any())
-                {
-                    _logger.LogWarning("No short interest data found from Chart Exchange for {Symbol}", symbol);
-                    return NotFound($"No short interest data found from Chart Exchange for {symbol}");
-                }
-
-                // Get existing data dates to avoid duplicates
-                var existingDates = await _context.ShortInterestData
-                    .Where(d => d.StockTickerSymbol == symbol)
-                    .Select(d => d.Date.Date)
-                    .ToListAsync();
-
-                int addedCount = 0;
-                
-                // Save new data to database
-                foreach (var item in chartExchangeData)
-                {
-                    if (!existingDates.Contains(item.Date.Date))
-                    {
-                        item.StockTickerSymbol = symbol;
-                        _context.ShortInterestData.Add(item);
-                        addedCount++;
-                    }
-                }
-                
-                if (addedCount > 0)
-                {
-                    await _context.SaveChangesAsync();
-                }
-
-                // Clear cache
-                _cache.Remove($"ShortInterest_{symbol}_{startDate}_{endDate}");
-                _cache.Remove($"ShortInterest_{symbol}_");
-                _cache.Remove($"LatestShortInterest_{symbol}");
-
-                // Map to DTOs
-                var data = chartExchangeData
-                    .OrderBy(d => d.Date)
-                    .Select(d => new ShortInterestDataDto
-                    {
-                        Date = d.Date,
-                        ShortInterest = d.ShortInterest,
-                        SharesShort = d.SharesShort
-                    })
-                    .ToList();
-
-                _logger.LogInformation("Refreshed short interest data for SPY. Added {AddedCount} new records.", addedCount);
-                return data;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error refreshing short interest data for SPY");
-                return StatusCode(500, "An error occurred while refreshing the data");
-            }
+            return NotFound("This endpoint is no longer available. Please use Polygon.io or FINRA endpoints for short interest data.");
         }
     }
 

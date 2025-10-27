@@ -18,7 +18,9 @@ namespace StockDataLib.Data
         public DbSet<BorrowFeeData> BorrowFeeData { get; set; }
         public DbSet<RedditMentionData> RedditMentionData { get; set; }
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
-        public DbSet<InteractiveBrokersPriceData> InteractiveBrokersPriceData { get; set; }
+        public DbSet<PolygonPriceData> PolygonPriceData { get; set; }
+        public DbSet<PolygonShortInterestData> PolygonShortInterestData { get; set; }
+        public DbSet<PolygonShortVolumeData> PolygonShortVolumeData { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,7 +73,9 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<BorrowFeeData>(modelBuilder);
             ConfigureStockDataPoint<RedditMentionData>(modelBuilder);
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
-            ConfigureStockDataPoint<InteractiveBrokersPriceData>(modelBuilder);
+            ConfigureStockDataPoint<PolygonPriceData>(modelBuilder);
+            ConfigureStockDataPoint<PolygonShortInterestData>(modelBuilder);
+            ConfigureStockDataPoint<PolygonShortVolumeData>(modelBuilder);
 
             // Configure specific navigation properties
             modelBuilder.Entity<StockTicker>()
@@ -115,7 +119,17 @@ namespace StockDataLib.Data
                 .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.InteractiveBrokersPriceData)
+                .HasMany(s => s.PolygonPriceData)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.PolygonShortInterestData)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.PolygonShortVolumeData)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
         }

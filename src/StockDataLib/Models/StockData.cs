@@ -22,6 +22,9 @@ namespace StockDataLib.Models
         public ICollection<BorrowFeeData> BorrowFeeData { get; set; }
         public ICollection<RedditMentionData> RedditMentionData { get; set; }
         public ICollection<FinraShortInterestData> FinraShortInterestData { get; set; }
+        public ICollection<PolygonPriceData> PolygonPriceData { get; set; }
+        public ICollection<PolygonShortInterestData> PolygonShortInterestData { get; set; }
+        public ICollection<PolygonShortVolumeData> PolygonShortVolumeData { get; set; }
     }
 
     /// <summary>

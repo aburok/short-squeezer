@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockDataLib.Data;
 
@@ -11,9 +12,11 @@ using StockDataLib.Data;
 namespace StockDataLib.Migrations
 {
     [DbContext(typeof(StockDataContext))]
-    partial class StockDataContextModelSnapshot : ModelSnapshot
+    [Migration("20251027140711_AddPolygonPriceData")]
+    partial class AddPolygonPriceData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,81 +146,6 @@ namespace StockDataLib.Migrations
                         .IsUnique();
 
                     b.ToTable("PolygonPriceData");
-                });
-
-            modelBuilder.Entity("StockDataLib.Models.PolygonShortInterestData", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("AvgDailyVolume")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("DaysToCover")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("PolygonRequestId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("SettlementDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("ShortInterest")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("StockTickerSymbol")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StockTickerSymbol", "Date")
-                        .IsUnique();
-
-                    b.ToTable("PolygonShortInterestData");
-                });
-
-            modelBuilder.Entity("StockDataLib.Models.PolygonShortVolumeData", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PolygonRequestId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("ShortVolume")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("ShortVolumeRatio")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("StockTickerSymbol")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<long>("TotalVolume")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StockTickerSymbol", "Date")
-                        .IsUnique();
-
-                    b.ToTable("PolygonShortVolumeData");
                 });
 
             modelBuilder.Entity("StockDataLib.Models.PriceData", b =>
@@ -460,28 +388,6 @@ namespace StockDataLib.Migrations
                     b.Navigation("StockTicker");
                 });
 
-            modelBuilder.Entity("StockDataLib.Models.PolygonShortInterestData", b =>
-                {
-                    b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
-                        .WithMany("PolygonShortInterestData")
-                        .HasForeignKey("StockTickerSymbol")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StockTicker");
-                });
-
-            modelBuilder.Entity("StockDataLib.Models.PolygonShortVolumeData", b =>
-                {
-                    b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
-                        .WithMany("PolygonShortVolumeData")
-                        .HasForeignKey("StockTickerSymbol")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StockTicker");
-                });
-
             modelBuilder.Entity("StockDataLib.Models.PriceData", b =>
                 {
                     b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
@@ -555,10 +461,6 @@ namespace StockDataLib.Migrations
                     b.Navigation("FinraShortInterestData");
 
                     b.Navigation("PolygonPriceData");
-
-                    b.Navigation("PolygonShortInterestData");
-
-                    b.Navigation("PolygonShortVolumeData");
 
                     b.Navigation("PriceData");
 

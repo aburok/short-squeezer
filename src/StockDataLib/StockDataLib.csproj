@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Newtonsoft.Json" />

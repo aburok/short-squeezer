@@ -97,39 +97,8 @@ namespace StockDataApi.Controllers
                     })
                     .ToListAsync();
 
-                // If no data found, try to fetch from Chart Exchange
-                if (data.Count == 0)
-                {
-                    _logger.LogInformation("No short volume data found in database for {Symbol}, fetching from Chart Exchange", symbol);
-                    
-                    // Determine exchange (simplified - in a real app you'd have a more robust way to determine this)
-                    string exchange = DetermineExchange(symbol);
-                    
-                    var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, startDate, endDate);
-                    
-                    if (chartExchangeData.Any())
-                    {
-                        // Save to database
-                        foreach (var item in chartExchangeData)
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.ShortVolumeData.Add(item);
-                        }
-                        
-                        await _context.SaveChangesAsync();
-                        
-                        // Map to DTOs
-                        data = chartExchangeData
-                            .OrderBy(d => d.Date)
-                            .Select(d => new ShortVolumeDataDto
-                            {
-                                Date = d.Date,
-                                ShortVolume = d.ShortVolume,
-                                ShortVolumePercent = d.ShortVolumePercent
-                            })
-                            .ToList();
-                    }
-                }
+                // If no data found in database, return empty list
+                // Data should be fetched from Polygon.io instead
 
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
@@ -192,39 +161,8 @@ namespace StockDataApi.Controllers
                     })
                     .FirstOrDefaultAsync();
 
-                // If no data found, try to fetch from Chart Exchange
-                if (latestData == null)
-                {
-                    _logger.LogInformation("No short volume data found in database for {Symbol}, fetching from Chart Exchange", symbol);
-                    
-                    // Determine exchange (simplified - in a real app you'd have a more robust way to determine this)
-                    string exchange = DetermineExchange(symbol);
-                    
-                    var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, null, null);
-                    
-                    if (chartExchangeData.Any())
-                    {
-                        // Save to database
-                        foreach (var item in chartExchangeData)
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.ShortVolumeData.Add(item);
-                        }
-                        
-                        await _context.SaveChangesAsync();
-                        
-                        // Get the latest data
-                        latestData = chartExchangeData
-                            .OrderByDescending(d => d.Date)
-                            .Select(d => new ShortVolumeDataDto
-                            {
-                                Date = d.Date,
-                                ShortVolume = d.ShortVolume,
-                                ShortVolumePercent = d.ShortVolumePercent
-                            })
-                            .FirstOrDefault();
-                    }
-                }
+                // If no data found, return null
+                // Data should be fetched from Polygon.io instead
 
                 if (latestData == null)
                 {
@@ -251,124 +189,17 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Refreshes short volume data for a specific symbol from Chart Exchange
+        /// Refreshes short volume data for a specific symbol (deprecated - use Polygon instead)
         /// </summary>
-        /// <param name="symbol">The stock symbol (e.g., BYND)</param>
-        /// <returns>The refreshed short volume data</returns>
+        /// <param name="symbol">The stock symbol</param>
+        /// <returns>Method not available</returns>
         [HttpPost("refresh/{symbol}")]
-        public async Task<ActionResult<IEnumerable<ShortVolumeDataDto>>> RefreshShortVolumeData(
+        public async Task<ActionResult> RefreshShortVolumeData(
             string symbol,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            try
-            {
-                // Normalize the symbol
-                symbol = symbol.ToUpper().Trim();
-                
-                // Find the ticker
-                var ticker = await _context.StockTickers
-                    .FirstOrDefaultAsync(t => t.Symbol == symbol);
-
-                if (ticker == null)
-                {
-                    _logger.LogWarning("Ticker {Symbol} not found", symbol);
-                    return NotFound($"Ticker {symbol} not found");
-                }
-
-                // Determine exchange (simplified - in a real app you'd have a more robust way to determine this)
-                string exchange = DetermineExchange(symbol);
-                
-                // Fetch data from Chart Exchange
-                var chartExchangeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, startDate, endDate);
-                
-                // Log date range if provided
-                if (startDate.HasValue && endDate.HasValue)
-                {
-                    _logger.LogInformation("Using date range: {StartDate} to {EndDate}",
-                        startDate.Value.ToString("yyyy-MM-dd"),
-                        endDate.Value.ToString("yyyy-MM-dd"));
-                }
-                
-                if (!chartExchangeData.Any())
-                {
-                    _logger.LogWarning("No short volume data found from Chart Exchange for {Symbol}", symbol);
-                    return NotFound($"No short volume data found from Chart Exchange for {symbol}");
-                }
-
-                // Get existing data dates to avoid duplicates
-                var existingDates = await _context.ShortVolumeData
-                    .Where(d => d.StockTickerSymbol == symbol)
-                    .Select(d => d.Date.Date)
-                    .ToListAsync();
-
-                int addedCount = 0;
-                
-                // Save new data to database
-                foreach (var item in chartExchangeData)
-                {
-                    if (!existingDates.Contains(item.Date.Date))
-                    {
-                        item.StockTickerSymbol = symbol;
-                        _context.ShortVolumeData.Add(item);
-                        addedCount++;
-                    }
-                }
-                
-                if (addedCount > 0)
-                {
-                    await _context.SaveChangesAsync();
-                }
-
-                // Clear cache
-                _cache.Remove($"ShortVolume_{symbol}_{startDate}_{endDate}");
-                _cache.Remove($"ShortVolume_{symbol}_");
-                _cache.Remove($"LatestShortVolume_{symbol}");
-
-                // Map to DTOs
-                var data = chartExchangeData
-                    .OrderBy(d => d.Date)
-                    .Select(d => new ShortVolumeDataDto
-                    {
-                        Date = d.Date,
-                        ShortVolume = d.ShortVolume,
-                        ShortVolumePercent = d.ShortVolumePercent
-                    })
-                    .ToList();
-
-                _logger.LogInformation("Refreshed short volume data for {Symbol}. Added {AddedCount} new records.", symbol, addedCount);
-                return data;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error refreshing short volume data for {Symbol}", symbol);
-                return StatusCode(500, "An error occurred while refreshing the data");
-            }
-        }
-
-        /// <summary>
-        /// Determines the exchange for a given symbol (simplified implementation)
-        /// </summary>
-        /// <param name="symbol">The stock symbol</param>
-        /// <returns>The exchange name</returns>
-        private string DetermineExchange(string symbol)
-        {
-            // This is a simplified implementation
-            // In a real application, you would have a more robust way to determine the exchange
-            // For example, you might have a database table mapping symbols to exchanges
-            
-            // For now, we'll use some common patterns
-            if (symbol == "BYND")
-            {
-                return "nasdaq";
-            }
-            else if (symbol == "SPY" || symbol == "GME" || symbol == "AMC")
-            {
-                return "nyse";
-            }
-            
-            // Default to nasdaq
-            return "nasdaq";
+            return NotFound("This endpoint is no longer available. Please use Polygon.io endpoints for short volume data.");
         }
     }
 

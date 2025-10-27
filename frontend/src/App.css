@@ -96,6 +96,52 @@
   margin: 0;
 }
 
+/* Recently Viewed Tickers Section */
+.recently-viewed-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.section-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.recent-tickers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recent-ticker-btn {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+.recent-ticker-btn:hover {
+  background: #e0e0e0;
+  border-color: #bbb;
+}
+
+.recent-ticker-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.recent-ticker-btn.active:hover {
+  background: #0056b3;
+}
+
 .ticker-search {
   position: relative;
 }

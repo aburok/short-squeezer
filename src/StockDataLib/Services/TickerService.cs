@@ -332,66 +332,6 @@ namespace StockDataLib.Services
                     await _context.SaveChangesAsync();
                 }
                 
-                // Fetch short volume data
-                var shortVolumeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, exchange, startDate, endDate);
-                if (shortVolumeData.Any())
-                {
-                    // Get existing data dates to avoid duplicates
-                    var existingDates = await _context.ShortVolumeData
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync();
-                    
-                    int addedCount = 0;
-                    
-                    // Save new data to database
-                    foreach (var item in shortVolumeData)
-                    {
-                        if (!existingDates.Contains(item.Date.Date))
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.ShortVolumeData.Add(item);
-                            addedCount++;
-                        }
-                    }
-                    
-                    if (addedCount > 0)
-                    {
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation("Added {Count} new short volume data points for {Symbol}", addedCount, symbol);
-                    }
-                }
-                
-                // Fetch short interest data
-                var shortInterestData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
-                if (shortInterestData.Any())
-                {
-                    // Get existing data dates to avoid duplicates
-                    var existingDates = await _context.ShortInterestData
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync();
-                    
-                    int addedCount = 0;
-                    
-                    // Save new data to database
-                    foreach (var item in shortInterestData)
-                    {
-                        if (!existingDates.Contains(item.Date.Date))
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.ShortInterestData.Add(item);
-                            addedCount++;
-                        }
-                    }
-                    
-                    if (addedCount > 0)
-                    {
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation("Added {Count} new short interest data points for {Symbol}", addedCount, symbol);
-                    }
-                }
-                
                 // Fetch borrow fee data
                 var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(symbol, exchange, startDate, endDate);
                 if (borrowFeeData.Any())
