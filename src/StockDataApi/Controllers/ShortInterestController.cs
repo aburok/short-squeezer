@@ -34,17 +34,12 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Gets short interest data for a specific ticker
+        /// Gets all short interest data for a specific ticker
         /// </summary>
         /// <param name="symbol">The stock symbol (e.g., SPY)</param>
-        /// <param name="startDate">Optional start date filter (format: yyyy-MM-dd)</param>
-        /// <param name="endDate">Optional end date filter (format: yyyy-MM-dd)</param>
-        /// <returns>A list of short interest data points</returns>
+        /// <returns>A list of all short interest data points</returns>
         [HttpGet("{symbol}")]
-        public async Task<ActionResult<IEnumerable<ShortInterestDataDto>>> GetShortInterestData(
-            string symbol,
-            [FromQuery] DateTime? startDate = null,
-            [FromQuery] DateTime? endDate = null)
+        public async Task<ActionResult<IEnumerable<ShortInterestDataDto>>> GetShortInterestData(string symbol)
         {
             try
             {
@@ -52,7 +47,7 @@ namespace StockDataApi.Controllers
                 symbol = symbol.ToUpper().Trim();
 
                 // Create cache key
-                string cacheKey = $"ShortInterest_{symbol}_{startDate}_{endDate}";
+                string cacheKey = $"ShortInterest_{symbol}";
 
                 // Try to get from cache
                 if (_cache.TryGetValue(cacheKey, out List<ShortInterestDataDto> cachedData))
@@ -71,23 +66,9 @@ namespace StockDataApi.Controllers
                     return NotFound($"Ticker {symbol} not found");
                 }
 
-                // Query for short interest data
-                var query = _context.ShortInterestData
-                    .Where(d => d.StockTickerSymbol == symbol);
-
-                // Apply date filters if provided
-                if (startDate.HasValue)
-                {
-                    query = query.Where(d => d.Date >= startDate.Value.Date);
-                }
-
-                if (endDate.HasValue)
-                {
-                    query = query.Where(d => d.Date <= endDate.Value.Date);
-                }
-
-                // Execute query and map to DTOs
-                var data = await query
+                // Query for ALL short interest data (no date filtering)
+                var data = await _context.ShortInterestData
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .OrderBy(d => d.Date)
                     .Select(d => new ShortInterestDataDto
                     {
@@ -97,13 +78,10 @@ namespace StockDataApi.Controllers
                     })
                     .ToListAsync();
 
-                // If no data found in database, return empty list
-                // Data should be fetched from Polygon.io or FINRA instead
-
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                
+
                 _cache.Set(cacheKey, data, cacheOptions);
 
                 _logger.LogInformation("Retrieved {Count} short interest data points for {Symbol}", data.Count, symbol);
@@ -173,12 +151,12 @@ namespace StockDataApi.Controllers
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                
+
                 _cache.Set(cacheKey, latestData, cacheOptions);
 
-                _logger.LogInformation("Retrieved latest short interest for {Symbol}: {ShortInterest}% on {Date}", 
+                _logger.LogInformation("Retrieved latest short interest for {Symbol}: {ShortInterest}% on {Date}",
                     symbol, latestData.ShortInterest, latestData.Date);
-                
+
                 return latestData;
             }
             catch (Exception ex)

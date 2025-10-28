@@ -33,13 +33,11 @@ namespace StockDataApi.Controllers
 
         /// <summary>
         /// Get all stock data for a ticker (unified endpoint)
-        /// Uses CQRS query handler
+        /// Uses CQRS query handler - returns ALL data without date filtering
         /// </summary>
         [HttpGet("{symbol}")]
         public async Task<IActionResult> GetAllStockData(
             string symbol,
-            [FromQuery] DateTime? startDate = null,
-            [FromQuery] DateTime? endDate = null,
             [FromQuery] bool includeBorrowFee = true,
             [FromQuery] bool includePolygon = true,
             [FromQuery] bool includeFinra = false)
@@ -49,8 +47,8 @@ namespace StockDataApi.Controllers
                 var query = new GetAllStockDataQuery
                 {
                     Symbol = symbol,
-                    StartDate = startDate,
-                    EndDate = endDate,
+                    StartDate = null, // No date filtering - return all data
+                    EndDate = null,   // No date filtering - return all data
                     IncludeBorrowFee = includeBorrowFee,
                     IncludePolygon = includePolygon,
                     IncludeFinra = includeFinra

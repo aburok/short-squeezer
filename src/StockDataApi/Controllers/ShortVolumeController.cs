@@ -30,17 +30,12 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Gets short volume data for a specific ticker
+        /// Gets all short volume data for a specific ticker
         /// </summary>
         /// <param name="symbol">The stock symbol (e.g., BYND)</param>
-        /// <param name="startDate">Optional start date filter (format: yyyy-MM-dd)</param>
-        /// <param name="endDate">Optional end date filter (format: yyyy-MM-dd)</param>
-        /// <returns>A list of short volume data points</returns>
+        /// <returns>A list of all short volume data points</returns>
         [HttpGet("{symbol}")]
-        public async Task<ActionResult<IEnumerable<ShortVolumeDataDto>>> GetShortVolumeData(
-            string symbol,
-            [FromQuery] DateTime? startDate = null,
-            [FromQuery] DateTime? endDate = null)
+        public async Task<ActionResult<IEnumerable<ShortVolumeDataDto>>> GetShortVolumeData(string symbol)
         {
             try
             {
@@ -48,7 +43,7 @@ namespace StockDataApi.Controllers
                 symbol = symbol.ToUpper().Trim();
 
                 // Create cache key
-                string cacheKey = $"ShortVolume_{symbol}_{startDate}_{endDate}";
+                string cacheKey = $"ShortVolume_{symbol}";
 
                 // Try to get from cache
                 if (_cache.TryGetValue(cacheKey, out List<ShortVolumeDataDto> cachedData))
@@ -67,23 +62,9 @@ namespace StockDataApi.Controllers
                     return NotFound($"Ticker {symbol} not found");
                 }
 
-                // Query for short volume data
-                var query = _context.ShortVolumeData
-                    .Where(d => d.StockTickerSymbol == symbol);
-
-                // Apply date filters if provided
-                if (startDate.HasValue)
-                {
-                    query = query.Where(d => d.Date >= startDate.Value.Date);
-                }
-
-                if (endDate.HasValue)
-                {
-                    query = query.Where(d => d.Date <= endDate.Value.Date);
-                }
-
-                // Execute query and map to DTOs
-                var data = await query
+                // Query for ALL short volume data (no date filtering)
+                var data = await _context.ShortVolumeData
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .OrderBy(d => d.Date)
                     .Select(d => new ShortVolumeDataDto
                     {
@@ -93,13 +74,10 @@ namespace StockDataApi.Controllers
                     })
                     .ToListAsync();
 
-                // If no data found in database, return empty list
-                // Data should be fetched from Polygon.io instead
-
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                
+
                 _cache.Set(cacheKey, data, cacheOptions);
 
                 _logger.LogInformation("Retrieved {Count} short volume data points for {Symbol}", data.Count, symbol);
@@ -169,12 +147,12 @@ namespace StockDataApi.Controllers
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                
+
                 _cache.Set(cacheKey, latestData, cacheOptions);
 
-                _logger.LogInformation("Retrieved latest short volume for {Symbol}: {ShortVolumePercent}% on {Date}", 
+                _logger.LogInformation("Retrieved latest short volume for {Symbol}: {ShortVolumePercent}% on {Date}",
                     symbol, latestData.ShortVolumePercent, latestData.Date);
-                
+
                 return latestData;
             }
             catch (Exception ex)

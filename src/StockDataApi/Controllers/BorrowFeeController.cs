@@ -31,17 +31,12 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Gets borrow fee data for a specific ticker
+        /// Gets all borrow fee data for a specific ticker
         /// </summary>
         /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
-        /// <param name="startDate">Optional start date filter (format: yyyy-MM-dd)</param>
-        /// <param name="endDate">Optional end date filter (format: yyyy-MM-dd)</param>
-        /// <returns>A list of borrow fee data points</returns>
+        /// <returns>A list of all borrow fee data points</returns>
         [HttpGet("{symbol}")]
-        public async Task<ActionResult<IEnumerable<BorrowFeeDataDto>>> GetBorrowFeeData(
-            string symbol,
-            [FromQuery] DateTime? startDate = null,
-            [FromQuery] DateTime? endDate = null)
+        public async Task<ActionResult<IEnumerable<BorrowFeeDataDto>>> GetBorrowFeeData(string symbol)
         {
             try
             {
@@ -49,7 +44,7 @@ namespace StockDataApi.Controllers
                 symbol = symbol.ToUpper().Trim();
 
                 // Create cache key
-                string cacheKey = $"BorrowFee_{symbol}_{startDate}_{endDate}";
+                string cacheKey = $"BorrowFee_{symbol}";
 
                 // Try to get from cache
                 if (_cache.TryGetValue(cacheKey, out List<BorrowFeeDataDto> cachedData))
@@ -68,23 +63,9 @@ namespace StockDataApi.Controllers
                     return NotFound($"Ticker {symbol} not found");
                 }
 
-                // Query for borrow fee data
-                var query = _context.BorrowFeeData
-                    .Where(d => d.StockTickerSymbol == symbol);
-
-                // Apply date filters if provided
-                if (startDate.HasValue)
-                {
-                    query = query.Where(d => d.Date >= startDate.Value.Date);
-                }
-
-                if (endDate.HasValue)
-                {
-                    query = query.Where(d => d.Date <= endDate.Value.Date);
-                }
-
-                // Execute query and map to DTOs
-                var data = await query
+                // Query for ALL borrow fee data (no date filtering)
+                var data = await _context.BorrowFeeData
+                    .Where(d => d.StockTickerSymbol == symbol)
                     .OrderBy(d => d.Date)
                     .Select(d => new BorrowFeeDataDto
                     {
@@ -97,7 +78,7 @@ namespace StockDataApi.Controllers
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                
+
                 _cache.Set(cacheKey, data, cacheOptions);
 
                 _logger.LogInformation("Retrieved {Count} borrow fee data points for {Symbol}", data.Count, symbol);
@@ -164,12 +145,12 @@ namespace StockDataApi.Controllers
                 // Cache the result for 15 minutes
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                
+
                 _cache.Set(cacheKey, latestData, cacheOptions);
 
-                _logger.LogInformation("Retrieved latest borrow fee for {Symbol}: {Fee}% on {Date}", 
+                _logger.LogInformation("Retrieved latest borrow fee for {Symbol}: {Fee}% on {Date}",
                     symbol, latestData.Fee, latestData.Date);
-                
+
                 return latestData;
             }
             catch (Exception ex)

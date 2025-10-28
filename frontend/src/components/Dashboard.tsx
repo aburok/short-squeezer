@@ -14,11 +14,21 @@ const Dashboard = () => {
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     endDate: new Date()
   });
-  const [shortInterestData, setShortInterestData] = useState([]);
-  const [shortVolumeData, setShortVolumeData] = useState([]);
-  const [borrowFeeData, setBorrowFeeData] = useState([]);
-  const [polygonShortInterestData, setPolygonShortInterestData] = useState([]);
-  const [polygonShortVolumeData, setPolygonShortVolumeData] = useState([]);
+
+  // Store all data (unfiltered)
+  const [allShortInterestData, setAllShortInterestData] = useState<any[]>([]);
+  const [allShortVolumeData, setAllShortVolumeData] = useState<any[]>([]);
+  const [allBorrowFeeData, setAllBorrowFeeData] = useState<any[]>([]);
+  const [allPolygonShortInterestData, setAllPolygonShortInterestData] = useState<any[]>([]);
+  const [allPolygonShortVolumeData, setAllPolygonShortVolumeData] = useState<any[]>([]);
+
+  // Filtered data for display
+  const [shortInterestData, setShortInterestData] = useState<any[]>([]);
+  const [shortVolumeData, setShortVolumeData] = useState<any[]>([]);
+  const [borrowFeeData, setBorrowFeeData] = useState<any[]>([]);
+  const [polygonShortInterestData, setPolygonShortInterestData] = useState<any[]>([]);
+  const [polygonShortVolumeData, setPolygonShortVolumeData] = useState<any[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
@@ -45,6 +55,25 @@ const Dashboard = () => {
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
     setDateRange({ startDate, endDate });
+    // Apply filtering immediately when date range changes
+    applyDateFiltering(startDate, endDate);
+  };
+
+  // Function to filter data by date range
+  const applyDateFiltering = (startDate: Date, endDate: Date) => {
+    const filterByDate = (data: any[]) => {
+      return data.filter(item => {
+        const itemDate = new Date(item.date || item.Date);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+    };
+
+    // Apply filtering to all data arrays
+    setShortInterestData(filterByDate(allShortInterestData));
+    setShortVolumeData(filterByDate(allShortVolumeData));
+    setBorrowFeeData(filterByDate(allBorrowFeeData));
+    setPolygonShortInterestData(filterByDate(allPolygonShortInterestData));
+    setPolygonShortVolumeData(filterByDate(allPolygonShortVolumeData));
   };
 
   const handleRefreshAllTickers = async () => {
@@ -204,18 +233,16 @@ const Dashboard = () => {
     setError('');
 
     try {
-      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
-      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      // Fetch ALL data without date filtering
+      console.log(`Fetching all data for ${selectedTicker}...`);
 
       // Don't fetch FINRA data, only Polygon data
       // Set empty arrays for non-Polygon data
-      setShortInterestData([]);
-      setShortVolumeData([]);
+      setAllShortInterestData([]);
+      setAllShortVolumeData([]);
 
-      // Fetch borrow fee data
-      const borrowFeeResponse = await fetch(
-        `/api/BorrowFee/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}`
-      );
+      // Fetch ALL borrow fee data (no date filtering)
+      const borrowFeeResponse = await fetch(`/api/BorrowFee/${selectedTicker}`);
       const borrowFeeResult = await borrowFeeResponse.json();
 
       // Debug logging
@@ -244,12 +271,36 @@ const Dashboard = () => {
       console.log('Transformed Borrow Fee Data:', transformedBorrowFeeData);
       console.log('Transformed Data Length:', transformedBorrowFeeData?.length);
 
-      setBorrowFeeData(transformedBorrowFeeData);
+      setAllBorrowFeeData(transformedBorrowFeeData);
 
-      // Fetch all Polygon data from unified endpoint
+      // Fetch ALL Short Interest data (no date filtering)
+      try {
+        const shortInterestResponse = await fetch(`/api/ShortInterest/${selectedTicker}`);
+        if (shortInterestResponse.ok) {
+          const shortInterestResult = await shortInterestResponse.json();
+          console.log('Short Interest API Response:', shortInterestResult);
+          setAllShortInterestData(shortInterestResult);
+        }
+      } catch (err) {
+        console.warn('Error fetching Short Interest data:', err);
+      }
+
+      // Fetch ALL Short Volume data (no date filtering)
+      try {
+        const shortVolumeResponse = await fetch(`/api/ShortVolume/${selectedTicker}`);
+        if (shortVolumeResponse.ok) {
+          const shortVolumeResult = await shortVolumeResponse.json();
+          console.log('Short Volume API Response:', shortVolumeResult);
+          setAllShortVolumeData(shortVolumeResult);
+        }
+      } catch (err) {
+        console.warn('Error fetching Short Volume data:', err);
+      }
+
+      // Fetch ALL Polygon data from unified endpoint (no date filtering)
       try {
         const stockDataResponse = await fetch(
-          `/api/StockData/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}&includePolygon=true&includeBorrowFee=false`
+          `/api/StockData/${selectedTicker}?includePolygon=true&includeBorrowFee=false`
         );
         if (stockDataResponse.ok) {
           const stockData = await stockDataResponse.json();
@@ -257,7 +308,7 @@ const Dashboard = () => {
 
           // Extract Polygon short interest data
           if (stockData.polygonData?.shortInterestData) {
-            setPolygonShortInterestData(stockData.polygonData.shortInterestData);
+            setAllPolygonShortInterestData(stockData.polygonData.shortInterestData);
           }
 
           // Extract Polygon short volume data
@@ -270,12 +321,15 @@ const Dashboard = () => {
               shortVolumePercent: Number(item.shortVolumeRatio || 0)
             }));
 
-            setPolygonShortVolumeData(transformedPolygonShortVolume);
+            setAllPolygonShortVolumeData(transformedPolygonShortVolume);
           }
         }
       } catch (err) {
         console.warn('Error fetching Polygon data:', err);
       }
+
+      // Apply initial date filtering to display data
+      applyDateFiltering(dateRange.startDate, dateRange.endDate);
 
     } catch (err) {
       setError('Error fetching data: ' + (err as Error).message);
@@ -286,7 +340,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedTicker, dateRange]);
+  }, [selectedTicker]); // Only fetch when ticker changes, not when date range changes
 
   // Load recently viewed tickers from localStorage on mount
   useEffect(() => {
