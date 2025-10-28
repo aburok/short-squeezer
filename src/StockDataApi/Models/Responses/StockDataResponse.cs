@@ -10,18 +10,9 @@ namespace StockDataApi.Models.Responses
     {
         public string Symbol { get; set; } = string.Empty;
 
-        public BorrowFeeDataDto[] BorrowFeeData { get; set; } = Array.Empty<BorrowFeeDataDto>();
-
         public ChartExchangeDataDto ChartExchangeData { get; set; } = new ChartExchangeDataDto();
 
         public FinraDataDto FinraData { get; set; } = new FinraDataDto();
-    }
-
-    public class BorrowFeeDataDto
-    {
-        public DateTime Date { get; set; }
-        public decimal Fee { get; set; }
-        public decimal? AvailableShares { get; set; }
     }
 
     public class ChartExchangeDataDto
@@ -37,18 +28,18 @@ namespace StockDataApi.Models.Responses
 
     public class ChartExchangeFailureToDeliverDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public long FailureToDeliver { get; set; }
         public decimal Price { get; set; }
         public long Volume { get; set; }
-        public DateTime? SettlementDate { get; set; }
+        public DateTimeOffset? SettlementDate { get; set; }
         public string? Cusip { get; set; }
         public string? CompanyName { get; set; }
     }
 
     public class ChartExchangeRedditMentionsDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public int Mentions { get; set; }
         public decimal? SentimentScore { get; set; }
         public string? SentimentLabel { get; set; }
@@ -60,7 +51,7 @@ namespace StockDataApi.Models.Responses
 
     public class ChartExchangeOptionChainDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public string ExpirationDate { get; set; } = string.Empty;
         public decimal StrikePrice { get; set; }
         public string OptionType { get; set; } = string.Empty;
@@ -78,21 +69,21 @@ namespace StockDataApi.Models.Responses
 
     public class ChartExchangeStockSplitDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public string SplitRatio { get; set; } = string.Empty;
         public decimal SplitFactor { get; set; }
         public decimal FromFactor { get; set; }
         public decimal ToFactor { get; set; }
-        public DateTime? ExDate { get; set; }
-        public DateTime? RecordDate { get; set; }
-        public DateTime? PayableDate { get; set; }
-        public DateTime? AnnouncementDate { get; set; }
+        public DateTimeOffset? ExDate { get; set; }
+        public DateTimeOffset? RecordDate { get; set; }
+        public DateTimeOffset? PayableDate { get; set; }
+        public DateTimeOffset? AnnouncementDate { get; set; }
         public string? CompanyName { get; set; }
     }
 
     public class ChartExchangeShortInterestDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public decimal ShortInterestPercent { get; set; } // Parsed from short_interest string
         public long ShortPosition { get; set; } // Number of shares short
         public decimal DaysToCover { get; set; } // Parsed from days_to_cover string
@@ -102,7 +93,7 @@ namespace StockDataApi.Models.Responses
 
     public class ChartExchangeShortVolumeDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
 
         // Core volume fields
         public long Rt { get; set; } // Total volume
@@ -130,7 +121,7 @@ namespace StockDataApi.Models.Responses
 
     public class ChartExchangeBorrowFeeDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public long Available { get; set; } // Available shares
         public decimal Fee { get; set; } // Parsed from fee string
         public decimal Rebate { get; set; } // Parsed from rebate string
@@ -143,7 +134,7 @@ namespace StockDataApi.Models.Responses
 
     public class FinraShortInterestDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public long ShortInterest { get; set; }
         public long SharesOutstanding { get; set; }
         public decimal ShortInterestPercent { get; set; }

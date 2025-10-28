@@ -74,27 +74,6 @@ namespace StockDataApi.Handlers.Queries
             }
         }
 
-        private async Task<BorrowFeeDataDto[]> GetBorrowFeeDataAsync(string symbol, DateTime? startDate, DateTime? endDate, CancellationToken cancellationToken)
-        {
-            var query = _context.BorrowFeeData.Where(d => d.StockTickerSymbol == symbol);
-
-            if (startDate.HasValue)
-                query = query.Where(d => d.Date >= startDate.Value.Date);
-
-            if (endDate.HasValue)
-                query = query.Where(d => d.Date <= endDate.Value.Date);
-
-            return await query
-                .OrderBy(d => d.Date)
-                .Select(d => new BorrowFeeDataDto
-                {
-                    Date = d.Date,
-                    Fee = d.Fee,
-                    AvailableShares = d.AvailableShares
-                })
-                .ToArrayAsync(cancellationToken);
-        }
-
         private async Task<ChartExchangeDataDto> GetChartExchangeDataAsync(string symbol, CancellationToken cancellationToken)
         {
             var chartExchangeData = new ChartExchangeDataDto();

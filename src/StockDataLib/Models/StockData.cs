@@ -35,7 +35,7 @@ namespace StockDataLib.Models
     {
         public int Id { get; set; }
         public string StockTickerSymbol { get; set; } = string.Empty;
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
 
         // Navigation property
         public StockTicker StockTicker { get; set; } = null!;

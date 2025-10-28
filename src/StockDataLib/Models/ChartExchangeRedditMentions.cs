@@ -12,5 +12,4 @@ public class ChartExchangeRedditMentions : StockDataPoint
     public int? Upvotes { get; set; }
     public int? Comments { get; set; }
     public decimal? EngagementScore { get; set; }
-    public string? ChartExchangeRequestId { get; set; }
 }

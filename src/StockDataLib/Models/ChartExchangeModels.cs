@@ -4,10 +4,20 @@ using Newtonsoft.Json;
 
 namespace StockDataLib.Models
 {
+    public interface IChartExchangeResponse
+    {
+
+    }
+    
+    public abstract class ChartExchangeArrayResponse<TItem> : List<TItem>, IChartExchangeResponse
+    {
+
+    }
+    
     /// <summary>
     /// Base class for ChartExchange API responses
     /// </summary>
-    public abstract class ChartExchangeResponse
+    public abstract class ChartExchangeResponse  
     {
         [JsonProperty("status")]
         public string Status { get; set; } = string.Empty;
@@ -22,7 +32,7 @@ namespace StockDataLib.Models
     /// <summary>
     /// Represents the failure to deliver API response from ChartExchange
     /// </summary>
-    public class ChartExchangeFailureToDeliverResponse : ChartExchangePagedResponse<ChartExchangeFailureToDeliverData>
+    public class ChartExchangeFailureToDeliverResponse : ChartExchangeArrayResponse<ChartExchangeBorrowFeeData>
     {
     }
 

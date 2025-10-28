@@ -392,14 +392,14 @@ namespace StockDataApi.Controllers
                     return NotFound($"Ticker {symbol} not found");
                 }
 
-                var data = await _context.BorrowFeeData
+                var data = await _context.ChartExchangeBorrowFee
                     .Where(d => d.StockTickerSymbol == symbol)
                     .OrderBy(d => d.Date)
                     .Select(d => new BorrowFeeDataDto
                     {
                         Date = d.Date,
                         Fee = d.Fee,
-                        AvailableShares = d.AvailableShares
+                        AvailableShares = d.Available
                     })
                     .ToListAsync();
 
@@ -478,23 +478,6 @@ namespace StockDataApi.Controllers
                     }
                 }
 
-                // Fetch and store option chain data
-                var optionChainData = await _chartExchangeService.GetOptionChainDataAsync(symbol, startDate, endDate);
-                if (optionChainData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeOptionChain
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync();
-
-                    var newOptionChainData = optionChainData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newOptionChainData.Any())
-                    {
-                        _context.ChartExchangeOptionChain.AddRange(newOptionChainData);
-                        totalRecords += newOptionChainData.Count;
-                    }
-                }
-
                 // Fetch and store stock split data
                 var stockSplitData = await _chartExchangeService.GetStockSplitDataAsync(symbol, startDate, endDate);
                 if (stockSplitData.Any())
@@ -544,18 +527,18 @@ namespace StockDataApi.Controllers
 
     public class ChartExchangeFailureToDeliverDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public long FailureToDeliver { get; set; }
         public decimal Price { get; set; }
         public long Volume { get; set; }
-        public DateTime? SettlementDate { get; set; }
+        public DateTimeOffset? SettlementDate { get; set; }
         public string? Cusip { get; set; }
         public string? CompanyName { get; set; }
     }
 
     public class ChartExchangeRedditMentionsDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public int Mentions { get; set; }
         public decimal? SentimentScore { get; set; }
         public string? SentimentLabel { get; set; }
@@ -567,7 +550,7 @@ namespace StockDataApi.Controllers
 
     public class ChartExchangeOptionChainDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public string ExpirationDate { get; set; } = string.Empty;
         public decimal StrikePrice { get; set; }
         public string OptionType { get; set; } = string.Empty;
@@ -585,36 +568,36 @@ namespace StockDataApi.Controllers
 
     public class ChartExchangeStockSplitDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public string SplitRatio { get; set; } = string.Empty;
         public decimal SplitFactor { get; set; }
         public decimal FromFactor { get; set; }
         public decimal ToFactor { get; set; }
-        public DateTime? ExDate { get; set; }
-        public DateTime? RecordDate { get; set; }
-        public DateTime? PayableDate { get; set; }
-        public DateTime? AnnouncementDate { get; set; }
+        public DateTimeOffset? ExDate { get; set; }
+        public DateTimeOffset? RecordDate { get; set; }
+        public DateTimeOffset? PayableDate { get; set; }
+        public DateTimeOffset? AnnouncementDate { get; set; }
         public string? CompanyName { get; set; }
     }
 
     // Additional DTOs for short interest, short volume, and borrow fee data
     public class ShortInterestDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public decimal ShortInterest { get; set; }
         public long SharesShort { get; set; }
     }
 
     public class ShortVolumeDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public long ShortVolume { get; set; }
         public decimal ShortVolumePercent { get; set; }
     }
 
     public class BorrowFeeDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public decimal Fee { get; set; }
         public decimal? AvailableShares { get; set; }
     }

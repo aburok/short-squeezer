@@ -79,12 +79,6 @@ namespace StockDataWorker.Services
 
                 try
                 {
-                    // Fetch borrow fee data
-                    if (_options.EnableBorrowFeeDataFetching)
-                    {
-                        await FetchBorrowFeeDataAsync(dbContext, ticker, stoppingToken);
-                    }
-
                     // Fetch FINRA short interest data
                     if (_options.EnableFinraDataFetching)
                     {
@@ -102,34 +96,6 @@ namespace StockDataWorker.Services
 
                 // Add a delay between requests to avoid overwhelming the server
                 await Task.Delay(TimeSpan.FromSeconds(_options.DelayBetweenRequestsSeconds), stoppingToken);
-            }
-        }
-
-        private async Task FetchBorrowFeeDataAsync(StockDataContext dbContext, StockTicker ticker, CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("Fetching borrow fee data for {Symbol}", ticker.Symbol);
-            
-            try
-            {
-                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(
-                    ticker.Symbol, 
-                    ticker.Exchange, 
-                    DateTime.Now.AddDays(-30), 
-                    DateTime.Now);
-                
-                if (borrowFeeData.Any())
-                {
-                    await UpdateBorrowFeeDataAsync(dbContext, ticker.Symbol, borrowFeeData, stoppingToken);
-                    _logger.LogInformation("Successfully updated borrow fee data for {Symbol}", ticker.Symbol);
-                }
-                else
-                {
-                    _logger.LogWarning("No borrow fee data found for {Symbol}", ticker.Symbol);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching borrow fee data for {Symbol}", ticker.Symbol);
             }
         }
 
@@ -181,95 +147,6 @@ namespace StockDataWorker.Services
             _logger.LogInformation("Added {Count} default tickers to the database", defaultTickers.Count);
             
             return defaultTickers;
-        }
-
-        private async Task UpdateBorrowFeeDataAsync(
-            StockDataContext dbContext, 
-            string tickerSymbol, 
-            List<BorrowFeeData> newData, 
-            CancellationToken stoppingToken)
-        {
-            // Get existing data for this ticker
-            var existingData = await dbContext.BorrowFeeData
-                .Where(d => d.StockTickerSymbol == tickerSymbol)
-                .ToDictionaryAsync(d => d.Date.Date, d => d, stoppingToken);
-
-            // Process new data
-            foreach (var dataPoint in newData)
-            {
-                // Set the ticker symbol
-                dataPoint.StockTickerSymbol = tickerSymbol;
-                
-                // Normalize the date to remove time component
-                var dateKey = dataPoint.Date.Date;
-
-                // Check if we already have data for this date
-                if (existingData.TryGetValue(dateKey, out var existingPoint))
-                {
-                    // Update existing data if the fee is different
-                    if (existingPoint.Fee != dataPoint.Fee)
-                    {
-                        existingPoint.Fee = dataPoint.Fee;
-                        existingPoint.AvailableShares = dataPoint.AvailableShares;
-                        dbContext.BorrowFeeData.Update(existingPoint);
-                    }
-                }
-                else
-                {
-                    // Add new data point
-                    dbContext.BorrowFeeData.Add(dataPoint);
-                }
-            }
-
-            // Save changes
-            await dbContext.SaveChangesAsync(stoppingToken);
-        }
-
-        private async Task UpdatePriceDataAsync(
-            StockDataContext dbContext,
-            string tickerSymbol,
-            List<PriceData> newData,
-            CancellationToken stoppingToken)
-        {
-            // Get existing data for this ticker
-            var existingData = await dbContext.PriceData
-                .Where(d => d.StockTickerSymbol == tickerSymbol)
-                .ToDictionaryAsync(d => d.Date.Date, d => d, stoppingToken);
-
-            // Process new data
-            foreach (var dataPoint in newData)
-            {
-                // Set the ticker symbol
-                dataPoint.StockTickerSymbol = tickerSymbol;
-                
-                // Normalize the date to remove time component
-                var dateKey = dataPoint.Date.Date;
-
-                // Check if we already have data for this date
-                if (existingData.TryGetValue(dateKey, out var existingPoint))
-                {
-                    // Update existing data if any value is different
-                    if (existingPoint.Open != dataPoint.Open ||
-                        existingPoint.High != dataPoint.High ||
-                        existingPoint.Low != dataPoint.Low ||
-                        existingPoint.Close != dataPoint.Close)
-                    {
-                        existingPoint.Open = dataPoint.Open;
-                        existingPoint.High = dataPoint.High;
-                        existingPoint.Low = dataPoint.Low;
-                        existingPoint.Close = dataPoint.Close;
-                        dbContext.PriceData.Update(existingPoint);
-                    }
-                }
-                else
-                {
-                    // Add new data point
-                    dbContext.PriceData.Add(dataPoint);
-                }
-            }
-
-            // Save changes
-            await dbContext.SaveChangesAsync(stoppingToken);
         }
 
         private async Task UpdateFinraShortInterestDataAsync(

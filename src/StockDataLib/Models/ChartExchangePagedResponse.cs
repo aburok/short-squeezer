@@ -5,7 +5,7 @@ namespace StockDataLib.Models;
 /// <summary>
 /// Base class for ChartExchange API responses
 /// </summary>
-public abstract class ChartExchangePagedResponse<TItem> : ChartExchangeResponse
+public abstract class ChartExchangePagedResponse<TItem> : IChartExchangeResponse
 {
     [JsonProperty("data")]
     public List<TItem> Data { get; set; } = new();

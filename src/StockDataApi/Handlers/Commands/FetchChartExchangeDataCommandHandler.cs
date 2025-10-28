@@ -106,27 +106,6 @@ namespace StockDataApi.Handlers.Commands
                     }
                 }
 
-                // Fetch and store option chain data
-                var optionChainData = await _chartExchangeService.GetOptionChainDataAsync(symbol, startDate, endDate);
-                if (optionChainData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeOptionChain
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newOptionChainData = optionChainData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newOptionChainData.Any())
-                    {
-                        _context.ChartExchangeOptionChain.AddRange(newOptionChainData);
-                        result.OptionChain.Fetched = newOptionChainData.Count;
-                    }
-                    else
-                    {
-                        result.OptionChain.Skipped = true;
-                    }
-                }
-
                 // Fetch and store stock split data
                 var stockSplitData = await _chartExchangeService.GetStockSplitDataAsync(symbol, startDate, endDate);
                 if (stockSplitData.Any())
@@ -190,6 +169,27 @@ namespace StockDataApi.Handlers.Commands
                     }
                 }
 
+                // Fetch and store borrow fee data
+                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(symbol, startDate, endDate);
+                if (borrowFeeData.Any())
+                {
+                    var existingDates = await _context.ChartExchangeBorrowFee
+                        .Where(d => d.StockTickerSymbol == symbol)
+                        .Select(d => d.Date.Date)
+                        .ToListAsync(cancellationToken);
+
+                    var newBorrowFeeData = borrowFeeData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
+                    if (newBorrowFeeData.Any())
+                    {
+                        _context.ChartExchangeBorrowFee.AddRange(newBorrowFeeData);
+                        result.BorrowFee.Fetched = newBorrowFeeData.Count;
+                    }
+                    else
+                    {
+                        result.BorrowFee.Skipped = true;
+                    }
+                }
+
                 await _context.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation("Successfully fetched ChartExchange data for {Symbol}", symbol);
@@ -231,6 +231,7 @@ namespace StockDataApi.Handlers.Commands
         public DataFetchResult StockSplits { get; set; } = new DataFetchResult();
         public DataFetchResult ShortInterest { get; set; } = new DataFetchResult();
         public DataFetchResult ShortVolume { get; set; } = new DataFetchResult();
+        public DataFetchResult BorrowFee { get; set; } = new DataFetchResult();
     }
 
     /// <summary>

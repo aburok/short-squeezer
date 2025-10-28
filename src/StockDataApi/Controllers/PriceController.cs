@@ -188,7 +188,7 @@ namespace StockDataApi.Controllers
     /// </summary>
     public class PriceDataDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public decimal Open { get; set; }
         public decimal High { get; set; }
         public decimal Low { get; set; }

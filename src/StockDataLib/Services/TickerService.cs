@@ -332,40 +332,6 @@ namespace StockDataLib.Services
                     await _context.SaveChangesAsync();
                 }
 
-                // Fetch borrow fee data
-                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(
-                    symbol,
-                    exchange,
-                    startDate ?? DateTime.Now.AddDays(-30),
-                    endDate ?? DateTime.Now);
-                if (borrowFeeData.Any())
-                {
-                    // Get existing data dates to avoid duplicates
-                    var existingDates = await _context.BorrowFeeData
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync();
-
-                    int addedCount = 0;
-
-                    // Save new data to database
-                    foreach (var item in borrowFeeData)
-                    {
-                        if (!existingDates.Contains(item.Date.Date))
-                        {
-                            item.StockTickerSymbol = symbol;
-                            _context.BorrowFeeData.Add(item);
-                            addedCount++;
-                        }
-                    }
-
-                    if (addedCount > 0)
-                    {
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation("Added {Count} new borrow fee data points for {Symbol}", addedCount, symbol);
-                    }
-                }
-
                 // Update last updated timestamp
                 ticker.LastUpdated = DateTime.UtcNow;
                 await _context.SaveChangesAsync();

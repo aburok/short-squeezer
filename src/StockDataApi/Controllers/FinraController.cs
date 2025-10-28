@@ -524,8 +524,8 @@ namespace StockDataApi.Controllers
     /// </summary>
     public class FinraShortInterestDataDto
     {
-        public DateTime Date { get; set; }
-        public DateTime SettlementDate { get; set; }
+        public DateTimeOffset Date { get; set; }
+        public DateTimeOffset SettlementDate { get; set; }
         public long ShortInterest { get; set; }
         public decimal ShortInterestPercent { get; set; }
         public decimal MarketValue { get; set; }

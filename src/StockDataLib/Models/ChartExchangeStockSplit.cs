@@ -14,5 +14,4 @@ public class ChartExchangeStockSplit : StockDataPoint
     public DateTime? PayableDate { get; set; }
     public DateTime? AnnouncementDate { get; set; }
     public string? CompanyName { get; set; }
-    public string? ChartExchangeRequestId { get; set; }
 }

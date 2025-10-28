@@ -15,7 +15,6 @@ namespace StockDataLib.Data
         public DbSet<ShortVolumeData> ShortVolumeData { get; set; }
         public DbSet<ShortPositionData> ShortPositionData { get; set; }
         public DbSet<ShortInterestData> ShortInterestData { get; set; }
-        public DbSet<BorrowFeeData> BorrowFeeData { get; set; }
         public DbSet<RedditMentionData> RedditMentionData { get; set; }
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
 
