@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StockDataLib;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 var configBuilder = new ConfigurationBuilder()

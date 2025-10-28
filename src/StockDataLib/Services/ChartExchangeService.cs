@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using StockDataLib.Models;
 
 namespace StockDataLib.Services
@@ -33,20 +32,14 @@ namespace StockDataLib.Services
             DateTime endDate);
     }
 
-    public class ChartExchangeService : IChartExchangeService
+    public class ChartExchangeService : BaseServiceBase, IChartExchangeService
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<ChartExchangeService> _logger;
-        private readonly ChartExchangeOptions _options;
-
         public ChartExchangeService(
             IHttpClientFactory httpClientFactory,
             ILogger<ChartExchangeService> logger,
             IOptions<ChartExchangeOptions> options)
+        :base(logger, "ChartExchange", httpClientFactory, options.Value)
         {
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
-            _options = options.Value;
         }
 
         /// <summary>
@@ -166,7 +159,7 @@ namespace StockDataLib.Services
         public async Task<ChartExchangeShortInterest[]> GetShortInterestDataAsync(string symbol, DateTime startDate,
             DateTime endDate)
         {
-            var url = "/data/stock/short-volume/";
+            var url = "/data/stocks/short-interest/";
             var data =
                 await GetArrayData<ChartExchangeShortInterestData, ChartExchangeShortInterest>(
                     symbol, url, (d) => new ChartExchangeShortInterest()
@@ -237,109 +230,5 @@ namespace StockDataLib.Services
                     });
             return data;
         }
-
-        private async Task<TModel[]> GetPagedData<TResponse, TItem, TModel>(string symbol,
-            string relativeUrl,
-            Func<TItem, TModel> map
-        )
-            where TResponse : ChartExchangePagedResponse<TItem>
-            where TModel : StockDataPoint
-        {
-            var result = await GetRawData<TResponse, TModel>(symbol, relativeUrl, (response) =>
-            {
-                if (response?.Data == null)
-                {
-                    _logger.LogWarning("No short volume data returned from ChartExchange for {Symbol}", symbol);
-                    return [];
-                }
-
-                var shortVolumeData = response.Data.Select(d => map(d)).ToArray();
-                return shortVolumeData;
-            });
-            return result;
-        }
-
-        private async Task<TModel[]> GetArrayData<TItem, TModel>(string symbol,
-            string relativeUrl,
-            Func<TItem, TModel> map
-        )
-            where TModel : StockDataPoint
-        {
-            var result = await GetRawData<TItem[], TModel>(symbol, relativeUrl, (response) =>
-            {
-                if (response.Length == 0)
-                {
-                    _logger.LogWarning("No short volume data returned from ChartExchange for {Symbol}", symbol);
-                    return [];
-                }
-
-                var shortVolumeData = response.Select(d => map(d)).ToArray();
-                return shortVolumeData;
-            });
-            return result;
-        }
-
-        private async Task<TModel[]> GetRawData<TResponse, TModel>(string symbol,
-            string relativeUrl,
-            Func<TResponse, TModel[]> mapResponse
-        )
-            where TModel : StockDataPoint
-        {
-            var timestamp = DateTimeOffset.UtcNow;
-            try
-            {
-                if (string.IsNullOrEmpty(_options.ApiKey))
-                {
-                    _logger.LogError("ChartExchange API key not configured");
-                    return [];
-                }
-
-                var client = _httpClientFactory.CreateClient("ChartExchange");
-                var url =
-                    $"{_options.BaseUrl}/api/v1{relativeUrl}?symbol={symbol}&api_key={_options.ApiKey}";
-
-                _logger.LogInformation("Fetching ChartExchange short volume data for {Symbol}", symbol);
-                _logger.LogInformation("Request URL: {Url}", url);
-
-                var response = await client.GetAsync(url);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var jsonContent = await response.Content.ReadAsStringAsync();
-                    var apiResponse = JsonConvert.DeserializeObject<TResponse>(jsonContent);
-
-                    var responseMapped = mapResponse(apiResponse);
-                    foreach (var stockDataPoint in responseMapped)
-                    {
-                        stockDataPoint.Date = timestamp;
-                    }
-
-                    return responseMapped;
-                }
-                else
-                {
-                    var jsonContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Error while executing request: {url} " + jsonContent, url);
-                }
-
-                return [];
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching ChartExchange short volume data for {Symbol}", symbol);
-                return [];
-            }
-        }
-    }
-
-    /// <summary>
-    /// Configuration options for ChartExchange API
-    /// </summary>
-    public class ChartExchangeOptions
-    {
-        public string ApiKey { get; set; } = string.Empty;
-        public string BaseUrl { get; set; } = "https://api.chartexchange.com";
-        public int RateLimitPerMinute { get; set; } = 60;
-        public bool IgnoreSslErrors { get; set; } = false;
     }
 }

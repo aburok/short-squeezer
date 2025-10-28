@@ -64,12 +64,6 @@ namespace StockDataLib.Data
             }
 
             // Configure each data type
-            ConfigureStockDataPoint<PriceData>(modelBuilder);
-            ConfigureStockDataPoint<VolumeData>(modelBuilder);
-            ConfigureStockDataPoint<ShortVolumeData>(modelBuilder);
-            ConfigureStockDataPoint<ShortPositionData>(modelBuilder);
-            ConfigureStockDataPoint<ShortInterestData>(modelBuilder);
-            ConfigureStockDataPoint<RedditMentionData>(modelBuilder);
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
 
             // Configure ChartExchange data points
@@ -80,22 +74,6 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<ChartExchangeShortInterest>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeShortVolume>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeBorrowFee>(modelBuilder);
-
-            // Configure specific navigation properties
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.PriceData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.VolumeData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.ShortPositionData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.FinraShortInterestData)
