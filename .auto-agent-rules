@@ -42,6 +42,11 @@ frontend/                   # React frontend
 - Use Entity Framework Core for data access
 - Cache frequently accessed data with `IMemoryCache`
 - Use `CancellationToken` for async operations
+- Try to reuse as much code as possjoible when fetching data
+- Keep classes and files as small as possible
+
+### Frontend 
+- Use Bootstrap as a framework for the ui
 
 ### TypeScript Frontend
 - Use functional components with hooks
@@ -135,6 +140,7 @@ frontend/                   # React frontend
 
 ## Monitoring
 - Log all API calls and errors
+- Include date & time in logs
 - Monitor external API rate limits
 - Track database performance
 - Monitor frontend errors in browser console

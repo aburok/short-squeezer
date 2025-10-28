@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Container, Row, Col, Card, Form, Button, ButtonGroup, Alert } from 'react-bootstrap';
 import FinraShortInterestChart from './FinraShortInterestChart';
 import MovableDateRangePicker from './MovableDateRangePicker';
 import './FinraDashboard.css';
@@ -36,102 +37,128 @@ const FinraDashboard: React.FC<FinraDashboardProps> = ({
   ];
 
   return (
-    <div className="finra-dashboard">
+    <Container fluid className="py-3">
       {/* Controls */}
-      <div className="finra-controls">
-        <div className="control-group">
-          {/* Symbol Input */}
-          <div className="control-item">
-            <label htmlFor="symbol">Stock Symbol</label>
-            <input
-              type="text"
-              id="symbol"
-              value={symbol}
-              onChange={(e) => handleSymbolChange(e.target.value)}
-              placeholder="Enter stock symbol (e.g., AAPL)"
-              className="symbol-input"
-            />
-          </div>
-
-          {/* Date Range Picker */}
-          <div className="control-item">
-            <label>Date Range (Optional)</label>
-            <MovableDateRangePicker
-              onDateRangeChange={handleDateRangeChange}
-              initialStartDate={startDate || undefined}
-              initialEndDate={endDate || undefined}
-            />
-          </div>
-
-          {/* Refresh Button */}
-          <div className="control-item">
-            <button
-              onClick={handleRefresh}
-              className="refresh-button"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Refreshing...' : 'Refresh Data'}
-            </button>
-          </div>
-        </div>
-
-        {/* Popular Symbols */}
-        <div className="popular-symbols">
-          <label>Popular Symbols</label>
-          <div className="symbol-buttons">
-            {popularSymbols.map((sym) => (
-              <button
-                key={sym}
-                onClick={() => setSymbol(sym)}
-                className={`symbol-button ${symbol === sym ? 'active' : ''}`}
-              >
-                {sym}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <Card className="mb-4">
+        <Card.Header>
+          <h4 className="mb-0">FINRA Regulatory Data Dashboard</h4>
+        </Card.Header>
+        <Card.Body>
+          <Row className="mb-3">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Stock Symbol</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={symbol}
+                  onChange={(e) => handleSymbolChange(e.target.value)}
+                  placeholder="Enter symbol (e.g., AAPL)"
+                  className="text-uppercase"
+                />
+              </Form.Group>
+            </Col>
+            
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Date Range (Optional)</Form.Label>
+                <MovableDateRangePicker
+                  onDateRangeChange={handleDateRangeChange}
+                  initialStartDate={startDate || undefined}
+                  initialEndDate={endDate || undefined}
+                />
+              </Form.Group>
+            </Col>
+            
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>&nbsp;</Form.Label>
+                <Button
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="w-100"
+                >
+                  {isLoading ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
+              </Form.Group>
+            </Col>
+          </Row>
+          
+          <Row>
+            <Col>
+              <div className="mb-2">
+                <small className="text-muted">Popular Symbols:</small>
+              </div>
+              <ButtonGroup size="sm" className="flex-wrap">
+                {popularSymbols.map((sym) => (
+                  <Button
+                    key={sym}
+                    variant={symbol === sym ? "primary" : "outline-secondary"}
+                    onClick={() => setSymbol(sym)}
+                    className="me-1 mb-1"
+                  >
+                    {sym}
+                  </Button>
+                ))}
+              </ButtonGroup>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
       {/* Charts */}
       {symbol && (
-        <div className="finra-charts-container">
-          <FinraShortInterestChart
-            symbol={symbol}
-            startDate={startDate ? startDate.toISOString().split('T')[0] : undefined}
-            endDate={endDate ? endDate.toISOString().split('T')[0] : undefined}
-          />
-        </div>
+        <Card className="mb-4">
+          <Card.Header>
+            <h5 className="mb-0">FINRA Short Interest Data - {symbol}</h5>
+          </Card.Header>
+          <Card.Body>
+            <FinraShortInterestChart
+              symbol={symbol}
+              startDate={startDate ? startDate.toISOString().split('T')[0] : undefined}
+              endDate={endDate ? endDate.toISOString().split('T')[0] : undefined}
+            />
+          </Card.Body>
+        </Card>
       )}
 
       {/* Information Panel */}
-      <div className="finra-info-panel">
-        <h3>About FINRA Short Interest Data</h3>
-        <div className="info-content">
-          <p>
-            <strong>Data Source:</strong> Financial Industry Regulatory Authority (FINRA) - Official regulatory database
-          </p>
-          <p>
-            <strong>Update Frequency:</strong> Twice monthly (mid-month and month-end settlement dates)
-          </p>
-          <p>
-            <strong>Coverage:</strong> All exchange-listed and OTC equity securities
-          </p>
-          <p>
-            <strong>Key Metrics:</strong>
-          </p>
-          <ul>
-            <li><strong>Short Interest %:</strong> Percentage of outstanding shares sold short</li>
-            <li><strong>Days to Cover:</strong> Number of days to cover short positions at average volume</li>
-            <li><strong>Market Value:</strong> Dollar value of short positions</li>
-            <li><strong>Shares Outstanding:</strong> Total shares available for trading</li>
-            <li><strong>Average Daily Volume:</strong> Average trading volume over the period</li>
-          </ul>
-          <p className="note">
+      <Card>
+        <Card.Header>
+          <h5 className="mb-0">About FINRA Short Interest Data</h5>
+        </Card.Header>
+        <Card.Body>
+          <Alert variant="info">
+            <Alert.Heading>Data Source</Alert.Heading>
+            <p className="mb-0">Financial Industry Regulatory Authority (FINRA) - Official regulatory database</p>
+          </Alert>
+          
+          <Row>
+            <Col md={6}>
+              <h6>Update Frequency</h6>
+              <p>Twice monthly (mid-month and month-end settlement dates)</p>
+              
+              <h6>Coverage</h6>
+              <p>All exchange-listed and OTC equity securities</p>
+            </Col>
+            
+            <Col md={6}>
+              <h6>Key Metrics</h6>
+              <ul>
+                <li><strong>Short Interest %:</strong> Percentage of outstanding shares sold short</li>
+                <li><strong>Days to Cover:</strong> Number of days to cover short positions at average volume</li>
+                <li><strong>Market Value:</strong> Dollar value of short positions</li>
+                <li><strong>Shares Outstanding:</strong> Total shares available for trading</li>
+                <li><strong>Average Daily Volume:</strong> Average trading volume over the period</li>
+              </ul>
+            </Col>
+          </Row>
+          
+          <Alert variant="warning">
             <strong>Note:</strong> High short interest percentages and low days to cover can indicate potential short squeeze scenarios.
-          </p>
-        </div>
-      </div>
-    </div>
+          </Alert>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 

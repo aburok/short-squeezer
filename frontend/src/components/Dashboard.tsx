@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
+import { Container, Row, Col, Card, Button, Dropdown, Alert, Spinner } from 'react-bootstrap';
 import TickerSearch from './TickerSearch';
 import MovableDateRangePicker from './MovableDateRangePicker';
 import ShortInterestChart from './ShortInterestChart';
@@ -302,198 +303,258 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-controls">
-        {/* Combined Row 1: Ticker Search + Recently Viewed + Actions Menu */}
-        <div className="combined-controls-row">
-          {/* Column 1: Ticker Search (20%) */}
-          <div className="ticker-search-col">
-            <TickerSearch onTickerSelect={handleTickerSelect} />
-          </div>
-
-          {/* Column 2: Recently Viewed (40%) */}
-          <div className="recently-viewed-col">
-            {recentlyViewedTickers.length > 0 && (
-              <div className="recently-viewed-inline">
-                <div className="section-label">Recently Viewed:</div>
-                <div className="recent-tickers-list">
-                  {recentlyViewedTickers.map((ticker, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleTickerSelect(ticker)}
-                      className={`recent-ticker-btn ${selectedTicker === ticker ? 'active' : ''}`}
-                      title={`View ${ticker}`}
-                    >
-                      {ticker}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Column 3: Actions Dropdown Menu (40%) */}
-          <div className="actions-menu-col">
-            <div className="actions-dropdown">
-              <button 
-                className="actions-button"
-                onClick={() => setShowActionsMenu(!showActionsMenu)}
-              >
-                Actions {showActionsMenu ? '^' : 'v'}
-              </button>
-              
-              {showActionsMenu && (
-                <div className="actions-menu">
-                  <button 
-                    onClick={() => {
-                      setShowActionsMenu(false);
-                      handleFetchPolygonData();
-                    }}
-                    disabled={!selectedTicker || isFetchingPolygon}
-                    className="actions-menu-item"
-                  >
-                    {isFetchingPolygon ? 'Fetching...' : 'Fetch Polygon Price Data'}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowActionsMenu(false);
-                      handleFetchAllPolygonData();
-                    }}
-                    disabled={!selectedTicker || isFetchingAllPolygon}
-                    className="actions-menu-item"
-                  >
-                    {isFetchingAllPolygon ? 'Fetching All...' : 'Fetch All Polygon Data'}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowActionsMenu(false);
-                      handleRefreshAllTickers();
-                    }}
-                    disabled={isRefreshingAll}
-                    className="actions-menu-item"
-                  >
-                    {isRefreshingAll ? 'Refreshing...' : 'Refresh All Tickers'}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowActionsMenu(false);
-                      handleFetchBlocksSummary();
-                    }}
-                    disabled={isFetchingBlocks}
-                    className="actions-menu-item"
-                  >
-                    {isFetchingBlocks ? 'Fetching...' : 'Fetch FINRA Blocks Summary'}
-                  </button>
+    <Container fluid className="py-3">
+      {/* Controls Section */}
+      <Card className="mb-4">
+        <Card.Header>
+          <h4 className="mb-0">Stock Data Dashboard</h4>
+        </Card.Header>
+        <Card.Body>
+          {/* Top Row: Ticker Search + Recently Viewed + Actions */}
+          <Row className="mb-3">
+            <Col md={3}>
+              <TickerSearch onTickerSelect={handleTickerSelect} />
+            </Col>
+            
+            <Col md={5}>
+              {recentlyViewedTickers.length > 0 && (
+                <div className="d-flex align-items-center">
+                  <span className="me-2 text-muted">Recently Viewed:</span>
+                  <div className="d-flex flex-wrap gap-1">
+                    {recentlyViewedTickers.map((ticker, index) => (
+                      <Button
+                        key={index}
+                        variant={selectedTicker === ticker ? "primary" : "outline-secondary"}
+                        size="sm"
+                        onClick={() => handleTickerSelect(ticker)}
+                        className="me-1"
+                      >
+                        {ticker}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+            </Col>
+            
+            <Col md={4}>
+              <Dropdown>
+                <Dropdown.Toggle variant="primary" id="actions-dropdown">
+                  Actions
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item 
+                    onClick={handleFetchPolygonData}
+                    disabled={!selectedTicker || isFetchingPolygon}
+                  >
+                    {isFetchingPolygon ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Fetching...
+                      </>
+                    ) : (
+                      'Fetch Polygon Price Data'
+                    )}
+                  </Dropdown.Item>
+                  <Dropdown.Item 
+                    onClick={handleFetchAllPolygonData}
+                    disabled={!selectedTicker || isFetchingAllPolygon}
+                  >
+                    {isFetchingAllPolygon ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Fetching All...
+                      </>
+                    ) : (
+                      'Fetch All Polygon Data'
+                    )}
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item 
+                    onClick={handleRefreshAllTickers}
+                    disabled={isRefreshingAll}
+                  >
+                    {isRefreshingAll ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      'Refresh All Tickers'
+                    )}
+                  </Dropdown.Item>
+                  <Dropdown.Item 
+                    onClick={handleFetchBlocksSummary}
+                    disabled={isFetchingBlocks}
+                  >
+                    {isFetchingBlocks ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Fetching...
+                      </>
+                    ) : (
+                      'Fetch FINRA Blocks Summary'
+                    )}
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </Col>
+          </Row>
+          
+          {/* Date Range Picker */}
+          <Row>
+            <Col>
+              <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
-        {/* Row 2: Date Range Picker */}
-        <div className="date-range-control">
-          <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
-        </div>
-      </div>
-
+      {/* Error Alert */}
       {error && (
-        <div className="error-message">
-          <p>{error}</p>
-        </div>
+        <Alert variant={error.includes('Error') || error.includes('Failed') ? 'danger' : 'success'} dismissible onClose={() => setError('')}>
+          {error}
+        </Alert>
       )}
 
+      {/* Charts Section */}
       {selectedTicker && (
-        <div className="charts-section">
-          <div className="chart-container">
-            <ShortInterestChart 
-              data={shortInterestData} 
-              ticker={selectedTicker}
-              isLoading={isLoading}
-            />
-          </div>
-          
-          <div className="chart-container">
-            <ShortVolumeChart 
-              data={shortVolumeData} 
-              ticker={selectedTicker}
-              isLoading={isLoading}
-            />
-          </div>
+        <div>
+          {/* Legacy Charts */}
+          <Row className="mb-4">
+            <Col md={6}>
+              <Card>
+                <Card.Header>
+                  <h5 className="mb-0">Short Interest - {selectedTicker}</h5>
+                </Card.Header>
+                <Card.Body>
+                  <ShortInterestChart 
+                    data={shortInterestData} 
+                    ticker={selectedTicker}
+                    isLoading={isLoading}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6}>
+              <Card>
+                <Card.Header>
+                  <h5 className="mb-0">Short Volume - {selectedTicker}</h5>
+                </Card.Header>
+                <Card.Body>
+                  <ShortVolumeChart 
+                    data={shortVolumeData} 
+                    ticker={selectedTicker}
+                    isLoading={isLoading}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
 
           {/* Polygon Data Charts */}
           {polygonShortInterestData.length > 0 && (
-            <div className="chart-container">
-              <h3>Polygon Short Interest - {selectedTicker}</h3>
-              <div style={{ height: '300px' }}>
-                <Line 
-                  data={{
-                    labels: polygonShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
-                    datasets: [{
-                      label: 'Short Interest',
-                      data: polygonShortInterestData.map((item: any) => Number(item.shortInterest || 0)),
-                      borderColor: 'rgb(255, 99, 132)',
-                      backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                      borderWidth: 2,
-                      fill: true,
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                  }}
-                />
-              </div>
-            </div>
+            <Row className="mb-4">
+              <Col md={6}>
+                <Card>
+                  <Card.Header>
+                    <h5 className="mb-0">Polygon Short Interest - {selectedTicker}</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    <div style={{ height: '300px' }}>
+                      <Line 
+                        data={{
+                          labels: polygonShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
+                          datasets: [{
+                            label: 'Short Interest',
+                            data: polygonShortInterestData.map((item: any) => Number(item.shortInterest || 0)),
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                        }}
+                      />
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
           )}
 
           {polygonShortVolumeData.length > 0 && (
-            <div className="chart-container">
-              <h3>Polygon Short Volume - {selectedTicker}</h3>
-              <div style={{ height: '300px' }}>
-                <Line 
-                  data={{
-                    labels: polygonShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
-                    datasets: [{
-                      label: 'Short Volume %',
-                      data: polygonShortVolumeData.map((item: any) => Number(item.shortVolumePercent || 0)),
-                      borderColor: 'rgb(54, 162, 235)',
-                      backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                      borderWidth: 2,
-                      fill: true,
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                  }}
-                />
-              </div>
-            </div>
+            <Row className="mb-4">
+              <Col md={6}>
+                <Card>
+                  <Card.Header>
+                    <h5 className="mb-0">Polygon Short Volume - {selectedTicker}</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    <div style={{ height: '300px' }}>
+                      <Line 
+                        data={{
+                          labels: polygonShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
+                          datasets: [{
+                            label: 'Short Volume %',
+                            data: polygonShortVolumeData.map((item: any) => Number(item.shortVolumePercent || 0)),
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                        }}
+                      />
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
           )}
           
-          <div className="chart-container">
-            <BorrowFeeChart 
-              data={borrowFeeData} 
-              ticker={selectedTicker}
-              isLoading={isLoading}
-            />
-          </div>
+          {/* Borrow Fee Chart */}
+          <Row className="mb-4">
+            <Col md={6}>
+              <Card>
+                <Card.Header>
+                  <h5 className="mb-0">Borrow Fee - {selectedTicker}</h5>
+                </Card.Header>
+                <Card.Body>
+                  <BorrowFeeChart 
+                    data={borrowFeeData} 
+                    ticker={selectedTicker}
+                    isLoading={isLoading}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
 
           {/* FINRA Data Section */}
-          <div className="finra-section">
-            <div className="section-header">
-              <h2>FINRA Regulatory Data</h2>
-              <p>Official short interest data from FINRA regulatory database</p>
-            </div>
-            <FinraShortInterestChart
-              symbol={selectedTicker}
-              startDate={dateRange.startDate.toISOString().split('T')[0]}
-              endDate={dateRange.endDate.toISOString().split('T')[0]}
-            />
-          </div>
+          <Card className="mb-4">
+            <Card.Header>
+              <h5 className="mb-0">FINRA Regulatory Data</h5>
+              <small className="text-muted">Official short interest data from FINRA regulatory database</small>
+            </Card.Header>
+            <Card.Body>
+              <FinraShortInterestChart
+                symbol={selectedTicker}
+                startDate={dateRange.startDate.toISOString().split('T')[0]}
+                endDate={dateRange.endDate.toISOString().split('T')[0]}
+              />
+            </Card.Body>
+          </Card>
         </div>
       )}
-    </div>
+    </Container>
   );
 };
 

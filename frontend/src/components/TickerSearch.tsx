@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Form, Spinner } from 'react-bootstrap';
 
 interface TickerSearchProps {
   onTickerSelect: (ticker: string) => void;
@@ -61,9 +62,9 @@ const TickerSearch: React.FC<TickerSearchProps> = ({ onTickerSelect }) => {
   };
 
   return (
-    <div className="ticker-search">
-      <div className="search-input-container">
-        <input
+    <div className="position-relative">
+      <Form.Group>
+        <Form.Control
           type="text"
           placeholder="Enter stock ticker symbol (e.g., AAPL, TSLA, MSFT)"
           value={searchTerm}
@@ -72,16 +73,23 @@ const TickerSearch: React.FC<TickerSearchProps> = ({ onTickerSelect }) => {
           onFocus={() => setShowSuggestions(searchTerm.length >= 2)}
           className="ticker-input"
         />
-        {isLoading && <div className="loading-spinner">Loading...</div>}
-      </div>
+        {isLoading && (
+          <div className="position-absolute top-0 end-0 p-2">
+            <Spinner size="sm" />
+          </div>
+        )}
+      </Form.Group>
 
       {showSuggestions && filteredTickers.length > 0 && (
-        <div className="suggestions-dropdown">
+        <div className="position-absolute w-100 bg-white border rounded shadow-sm" style={{ zIndex: 1000 }}>
           {filteredTickers.map((ticker, index) => (
             <div
               key={index}
-              className="suggestion-item"
+              className="p-2 border-bottom cursor-pointer hover-bg-light"
               onClick={() => handleTickerSelect(ticker)}
+              style={{ cursor: 'pointer' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
             >
               {ticker}
             </div>
@@ -90,7 +98,7 @@ const TickerSearch: React.FC<TickerSearchProps> = ({ onTickerSelect }) => {
       )}
 
       {showSuggestions && filteredTickers.length === 0 && searchTerm.length >= 2 && (
-        <div className="no-suggestions">
+        <div className="position-absolute w-100 bg-white border rounded shadow-sm p-2 text-muted" style={{ zIndex: 1000 }}>
           No tickers found matching "{searchTerm}"
         </div>
       )}
