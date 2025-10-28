@@ -49,8 +49,8 @@ builder.Services.AddDbContext<StockDataContext>(options =>
 // Add HTTP client factory
 builder.Services.AddHttpClient();
 
-// Add HTTP client for Polygon
-builder.Services.AddHttpClient("Polygon");
+// Add HTTP client for ChartExchange
+builder.Services.AddHttpClient("ChartExchange");
 
 // Add memory cache
 builder.Services.AddMemoryCache();
@@ -72,11 +72,10 @@ builder.Services.AddScoped<IChartExchangeService, ChartExchangeService>();
 builder.Services.AddScoped<IAlphaVantageService, AlphaVantageService>();
 builder.Services.AddScoped<ITickerService, TickerService>();
 builder.Services.AddScoped<IFinraService, FinraService>();
-builder.Services.AddScoped<IPolygonService, PolygonService>();
 
 // Register CQRS handlers
 builder.Services.AddScoped<StockDataApi.Handlers.Queries.GetAllStockDataQueryHandler>();
-builder.Services.AddScoped<StockDataApi.Handlers.Commands.FetchPolygonDataCommandHandler>();
+builder.Services.AddScoped<StockDataApi.Handlers.Commands.FetchChartExchangeDataCommandHandler>();
 
 // Configure Alpha Vantage options
 builder.Services.Configure<AlphaVantageOptions>(
@@ -86,9 +85,9 @@ builder.Services.Configure<AlphaVantageOptions>(
 builder.Services.Configure<FinraOptions>(
     builder.Configuration.GetSection("Finra"));
 
-// Configure Polygon options
-builder.Services.Configure<PolygonOptions>(
-    builder.Configuration.GetSection("Polygon"));
+// Configure ChartExchange options
+builder.Services.Configure<ChartExchangeOptions>(
+    builder.Configuration.GetSection("ChartExchange"));
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -223,10 +222,10 @@ static async Task EnsureDatabaseMigratedAsync(WebApplication app)
     try
     {
         Console.WriteLine("🔄 Checking database migrations...");
-        
+
         using var scope = app.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<StockDataContext>();
-        
+
         // Check if database exists
         var canConnect = await context.Database.CanConnectAsync();
         if (!canConnect)
@@ -238,10 +237,10 @@ static async Task EnsureDatabaseMigratedAsync(WebApplication app)
         else
         {
             Console.WriteLine("📊 Database exists. Checking for pending migrations...");
-            
+
             // Get pending migrations
             var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
-            
+
             if (pendingMigrations.Any())
             {
                 Console.WriteLine($"🔄 Found {pendingMigrations.Count()} pending migrations:");
@@ -249,7 +248,7 @@ static async Task EnsureDatabaseMigratedAsync(WebApplication app)
                 {
                     Console.WriteLine($"  - {migration}");
                 }
-                
+
                 Console.WriteLine("📦 Applying migrations...");
                 await context.Database.MigrateAsync();
                 Console.WriteLine("✅ Migrations applied successfully");
@@ -259,7 +258,7 @@ static async Task EnsureDatabaseMigratedAsync(WebApplication app)
                 Console.WriteLine("✅ Database is up to date - no pending migrations");
             }
         }
-        
+
         // Verify database connection
         var isHealthy = await context.Database.CanConnectAsync();
         if (isHealthy)
@@ -275,7 +274,7 @@ static async Task EnsureDatabaseMigratedAsync(WebApplication app)
     {
         Console.WriteLine($"❌ Error ensuring database migrations: {ex.Message}");
         Console.WriteLine($"   Details: {ex.InnerException?.Message ?? ex.Message}");
-        
+
         // In development, we might want to continue even if migrations fail
         if (app.Environment.IsDevelopment())
         {
@@ -366,9 +365,9 @@ static void DisplayConfigurationSources(IConfiguration configuration)
         var configRoot = configuration as IConfigurationRoot;
         if (configRoot != null)
         {
-            var sourcesField = typeof(ConfigurationRoot).GetField("_sources", 
+            var sourcesField = typeof(ConfigurationRoot).GetField("_sources",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             if (sourcesField != null)
             {
                 var sources = sourcesField.GetValue(configRoot) as System.Collections.Generic.IList<IConfigurationSource>;
@@ -395,8 +394,8 @@ static string MaskSensitiveValue(string section, string key, string value)
 
     // Mask sensitive values
     var sensitiveKeys = new[] { "password", "pwd", "secret", "key", "token", "connectionstring" };
-    var isSensitive = sensitiveKeys.Any(sk => 
-        key.Contains(sk, StringComparison.OrdinalIgnoreCase) || 
+    var isSensitive = sensitiveKeys.Any(sk =>
+        key.Contains(sk, StringComparison.OrdinalIgnoreCase) ||
         section.Contains(sk, StringComparison.OrdinalIgnoreCase));
 
     if (isSensitive)
@@ -414,32 +413,32 @@ static string MaskConnectionString(string connectionString)
 {
     if (string.IsNullOrEmpty(connectionString))
         return "NOT CONFIGURED";
-    
+
     // Mask password and other sensitive information
     var masked = connectionString;
-    
+
     // Mask password
     if (masked.Contains("Password="))
     {
         var passwordIndex = masked.IndexOf("Password=");
         var endIndex = masked.IndexOf(";", passwordIndex);
         if (endIndex == -1) endIndex = masked.Length;
-        
+
         var passwordValue = masked.Substring(passwordIndex + 9, endIndex - passwordIndex - 9);
         masked = masked.Replace($"Password={passwordValue}", "Password=***");
     }
-    
+
     // Mask user ID
     if (masked.Contains("User Id="))
     {
         var userIndex = masked.IndexOf("User Id=");
         var endIndex = masked.IndexOf(";", userIndex);
         if (endIndex == -1) endIndex = masked.Length;
-        
+
         var userValue = masked.Substring(userIndex + 8, endIndex - userIndex - 8);
         masked = masked.Replace($"User Id={userValue}", "User Id=***");
     }
-    
+
     return masked;
 }
 

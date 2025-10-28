@@ -27,7 +27,7 @@ namespace StockDataLib.Services
         private readonly IChartExchangeService _chartExchangeService;
 
         public TickerService(
-            IHttpClientFactory httpClientFactory, 
+            IHttpClientFactory httpClientFactory,
             ILogger<TickerService> logger,
             StockDataContext context,
             IChartExchangeService chartExchangeService)
@@ -49,7 +49,7 @@ namespace StockDataLib.Services
             {
                 exchange = exchange.ToLower().Trim();
                 string url = "";
-                
+
                 switch (exchange)
                 {
                     case "nasdaq":
@@ -80,12 +80,12 @@ namespace StockDataLib.Services
             try
             {
                 _logger.LogInformation("Attempting to fetch tickers from SEC endpoint for {Exchange}", exchange);
-                
+
                 // Add a small delay to be respectful to SEC servers
                 await Task.Delay(1000);
 
                 using var httpClient = _httpClientFactory.CreateClient("ExchangeData");
-                
+
                 // Add headers required by SEC.gov for automated access
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "StockDataApi/1.0 (https://github.com/your-repo/stock-data-api; contact@yourdomain.com)");
                 httpClient.DefaultRequestHeaders.Add("Accept", "application/json, text/plain, */*");
@@ -95,36 +95,36 @@ namespace StockDataLib.Services
                 httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
                 httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
                 httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Site", "cross-site");
-                
+
                 var response = await httpClient.GetAsync("https://www.sec.gov/files/company_tickers.json");
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("SEC endpoint failed: {StatusCode} {ReasonPhrase}. Content: {Content}",
                         response.StatusCode, response.ReasonPhrase, errorContent);
-                    
+
                     // Check for specific SEC access issues
-                    if (response.StatusCode == System.Net.HttpStatusCode.Forbidden && 
+                    if (response.StatusCode == System.Net.HttpStatusCode.Forbidden &&
                         errorContent.Contains("Privacy and Security Policy"))
                     {
                         _logger.LogError("SEC access denied. Please ensure your application complies with SEC.gov's Privacy and Security Policy. " +
                             "Consider adding proper User-Agent header and rate limiting.");
                     }
-                    
+
                     // Try fallback to NASDAQ endpoint
                     return await TryNasdaqFallback(exchange);
                 }
 
                 string content = await response.Content.ReadAsStringAsync();
-                
+
                 // Use SEC JSON parser for all exchanges
                 return ParseSecTickers(content, exchange);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching tickers from SEC endpoint for {Exchange}", exchange);
-                
+
                 // Try fallback to NASDAQ endpoint
                 return await TryNasdaqFallback(exchange);
             }
@@ -140,16 +140,16 @@ namespace StockDataLib.Services
             try
             {
                 _logger.LogInformation("Trying NASDAQ fallback for {Exchange}", exchange);
-                
+
                 using var httpClient = _httpClientFactory.CreateClient("ExchangeData");
-                
+
                 // Add headers for NASDAQ endpoint
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36");
                 httpClient.DefaultRequestHeaders.Add("Accept", "text/plain, */*");
                 httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
-                
+
                 var response = await httpClient.GetAsync("https://www.nasdaqtrader.com/dynamic/symdir/nasdaqlisted.txt");
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("NASDAQ fallback also failed: {StatusCode} {ReasonPhrase}",
@@ -158,7 +158,7 @@ namespace StockDataLib.Services
                 }
 
                 string content = await response.Content.ReadAsStringAsync();
-                
+
                 // Parse NASDAQ format
                 return ParseNasdaqTickers(content);
             }
@@ -180,26 +180,26 @@ namespace StockDataLib.Services
             {
                 var tickers = new List<StockTicker>();
                 var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                
+
                 // Skip the header line and process each line
                 for (int i = 1; i < lines.Length; i++)
                 {
                     var line = lines[i].Trim();
                     if (string.IsNullOrEmpty(line)) continue;
-                    
+
                     var parts = line.Split('|');
-                    
+
                     // NASDAQ format: Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
                     if (parts.Length >= 2)
                     {
                         string symbol = parts[0].Trim();
                         string name = parts[1].Trim();
                         string testIssue = parts.Length > 3 ? parts[3].Trim() : "";
-                        
+
                         // Skip test issues and invalid symbols
                         if (testIssue == "Y" || string.IsNullOrEmpty(symbol) || symbol.Length > 5)
                             continue;
-                        
+
                         tickers.Add(new StockTicker
                         {
                             Symbol = symbol,
@@ -209,7 +209,7 @@ namespace StockDataLib.Services
                         });
                     }
                 }
-                
+
                 _logger.LogInformation("Successfully parsed {Count} NASDAQ tickers (fallback)", tickers.Count);
                 return tickers;
             }
@@ -231,16 +231,16 @@ namespace StockDataLib.Services
             try
             {
                 var tickers = new List<StockTicker>();
-                
+
                 // Parse JSON content
                 var jsonData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(content);
-                
+
                 if (jsonData == null)
                 {
                     _logger.LogWarning("Failed to parse SEC JSON data");
                     return tickers;
                 }
-                
+
                 // SEC JSON format: {"0": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."}, ...}
                 foreach (var kvp in jsonData)
                 {
@@ -249,19 +249,19 @@ namespace StockDataLib.Services
                         try
                         {
                             var tickerData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(element.GetRawText());
-                            
-                            if (tickerData != null && 
-                                tickerData.ContainsKey("ticker") && 
+
+                            if (tickerData != null &&
+                                tickerData.ContainsKey("ticker") &&
                                 tickerData.ContainsKey("title"))
                             {
                                 string symbol = tickerData["ticker"]?.ToString()?.Trim();
                                 string name = tickerData["title"]?.ToString()?.Trim();
-                                
+
                                 if (!string.IsNullOrEmpty(symbol) && !string.IsNullOrEmpty(name))
                                 {
                                     // Determine exchange based on symbol patterns or use "all" for comprehensive list
                                     string tickerExchange = exchange == "all" ? "all" : exchange;
-                                    
+
                                     tickers.Add(new StockTicker
                                     {
                                         Symbol = symbol,
@@ -278,7 +278,7 @@ namespace StockDataLib.Services
                         }
                     }
                 }
-                
+
                 _logger.LogInformation("Successfully parsed {Count} SEC tickers for {Exchange}", tickers.Count, exchange);
                 return tickers;
             }
@@ -302,9 +302,9 @@ namespace StockDataLib.Services
                 // Normalize inputs
                 symbol = symbol.ToUpper().Trim();
                 exchange = exchange.ToLower().Trim();
-                
+
                 _logger.LogInformation("Refreshing data for {Symbol} on {Exchange}", symbol, exchange);
-                
+
                 // Log date range if provided
                 if (startDate.HasValue && endDate.HasValue)
                 {
@@ -312,11 +312,11 @@ namespace StockDataLib.Services
                         startDate.Value.ToString("yyyy-MM-dd"),
                         endDate.Value.ToString("yyyy-MM-dd"));
                 }
-                
+
                 // Find or create the ticker
                 var ticker = await _context.StockTickers
                     .FirstOrDefaultAsync(t => t.Symbol == symbol);
-                
+
                 if (ticker == null)
                 {
                     _logger.LogInformation("Ticker {Symbol} not found, creating new entry", symbol);
@@ -327,13 +327,17 @@ namespace StockDataLib.Services
                         Name = symbol, // Default to symbol as name
                         LastUpdated = DateTime.UtcNow
                     };
-                    
+
                     _context.StockTickers.Add(ticker);
                     await _context.SaveChangesAsync();
                 }
-                
+
                 // Fetch borrow fee data
-                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(symbol, exchange, startDate, endDate);
+                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(
+                    symbol,
+                    exchange,
+                    startDate ?? DateTime.Now.AddDays(-30),
+                    endDate ?? DateTime.Now);
                 if (borrowFeeData.Any())
                 {
                     // Get existing data dates to avoid duplicates
@@ -341,9 +345,9 @@ namespace StockDataLib.Services
                         .Where(d => d.StockTickerSymbol == symbol)
                         .Select(d => d.Date.Date)
                         .ToListAsync();
-                    
+
                     int addedCount = 0;
-                    
+
                     // Save new data to database
                     foreach (var item in borrowFeeData)
                     {
@@ -354,18 +358,18 @@ namespace StockDataLib.Services
                             addedCount++;
                         }
                     }
-                    
+
                     if (addedCount > 0)
                     {
                         await _context.SaveChangesAsync();
                         _logger.LogInformation("Added {Count} new borrow fee data points for {Symbol}", addedCount, symbol);
                     }
                 }
-                
+
                 // Update last updated timestamp
                 ticker.LastUpdated = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
-                
+
                 _logger.LogInformation("Successfully refreshed data for {Symbol}", symbol);
                 return true;
             }
@@ -385,22 +389,22 @@ namespace StockDataLib.Services
             try
             {
                 _logger.LogInformation("Starting refresh of all tickers from exchanges");
-                
+
                 // Get tickers from SEC (covers all exchanges)
                 var allTickers = await GetTickersFromExchangeAsync("all");
-                
+
                 if (allTickers.Count == 0)
                 {
                     _logger.LogWarning("No tickers found from exchanges");
                     return false;
                 }
-                
+
                 _logger.LogInformation("Found {Count} tickers from exchanges", allTickers.Count);
-                
+
                 // Get existing tickers
                 var existingTickers = await _context.StockTickers.ToListAsync();
                 var existingSymbols = existingTickers.Select(t => t.Symbol).ToHashSet();
-                
+
                 // Add new tickers
                 int addedCount = 0;
                 foreach (var ticker in allTickers)
@@ -411,13 +415,13 @@ namespace StockDataLib.Services
                         addedCount++;
                     }
                 }
-                
+
                 if (addedCount > 0)
                 {
                     await _context.SaveChangesAsync();
                     _logger.LogInformation("Added {Count} new tickers to database", addedCount);
                 }
-                
+
                 return true;
             }
             catch (Exception ex)

@@ -18,9 +18,13 @@ namespace StockDataLib.Data
         public DbSet<BorrowFeeData> BorrowFeeData { get; set; }
         public DbSet<RedditMentionData> RedditMentionData { get; set; }
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
-        public DbSet<PolygonPriceData> PolygonPriceData { get; set; }
-        public DbSet<PolygonShortInterestData> PolygonShortInterestData { get; set; }
-        public DbSet<PolygonShortVolumeData> PolygonShortVolumeData { get; set; }
+
+        // ChartExchange data sets
+        public DbSet<ChartExchangePrice> ChartExchangePrice { get; set; }
+        public DbSet<ChartExchangeFailureToDeliver> ChartExchangeFailureToDeliver { get; set; }
+        public DbSet<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
+        public DbSet<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
+        public DbSet<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,9 +77,13 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<BorrowFeeData>(modelBuilder);
             ConfigureStockDataPoint<RedditMentionData>(modelBuilder);
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
-            ConfigureStockDataPoint<PolygonPriceData>(modelBuilder);
-            ConfigureStockDataPoint<PolygonShortInterestData>(modelBuilder);
-            ConfigureStockDataPoint<PolygonShortVolumeData>(modelBuilder);
+
+            // Configure ChartExchange data points
+            ConfigureStockDataPoint<ChartExchangePrice>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeFailureToDeliver>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeRedditMentions>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeOptionChain>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeStockSplit>(modelBuilder);
 
             // Configure specific navigation properties
             modelBuilder.Entity<StockTicker>()
@@ -118,18 +126,29 @@ namespace StockDataLib.Data
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
 
+            // ChartExchange navigation properties
             modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.PolygonPriceData)
+                .HasMany(s => s.ChartExchangePrice)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.PolygonShortInterestData)
+                .HasMany(s => s.ChartExchangeFailureToDeliver)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.PolygonShortVolumeData)
+                .HasMany(s => s.ChartExchangeRedditMentions)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.ChartExchangeOptionChain)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.ChartExchangeStockSplit)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
         }

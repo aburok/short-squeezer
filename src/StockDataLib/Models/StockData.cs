@@ -12,7 +12,7 @@ namespace StockDataLib.Models
         public string Exchange { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public DateTime LastUpdated { get; set; }
-        
+
         // Navigation properties
         public ICollection<PriceData> PriceData { get; set; }
         public ICollection<VolumeData> VolumeData { get; set; }
@@ -22,9 +22,13 @@ namespace StockDataLib.Models
         public ICollection<BorrowFeeData> BorrowFeeData { get; set; }
         public ICollection<RedditMentionData> RedditMentionData { get; set; }
         public ICollection<FinraShortInterestData> FinraShortInterestData { get; set; }
-        public ICollection<PolygonPriceData> PolygonPriceData { get; set; }
-        public ICollection<PolygonShortInterestData> PolygonShortInterestData { get; set; }
-        public ICollection<PolygonShortVolumeData> PolygonShortVolumeData { get; set; }
+
+        // ChartExchange navigation properties
+        public ICollection<ChartExchangePrice> ChartExchangePrice { get; set; }
+        public ICollection<ChartExchangeFailureToDeliver> ChartExchangeFailureToDeliver { get; set; }
+        public ICollection<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
+        public ICollection<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
+        public ICollection<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
     }
 
     /// <summary>
@@ -35,7 +39,7 @@ namespace StockDataLib.Models
         public int Id { get; set; }
         public string StockTickerSymbol { get; set; } = string.Empty;
         public DateTime Date { get; set; }
-        
+
         // Navigation property
         public StockTicker StockTicker { get; set; } = null!;
     }

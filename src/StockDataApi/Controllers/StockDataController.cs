@@ -18,16 +18,16 @@ namespace StockDataApi.Controllers
     public class StockDataController : ControllerBase
     {
         private readonly GetAllStockDataQueryHandler _getAllStockDataQueryHandler;
-        private readonly FetchPolygonDataCommandHandler _fetchPolygonDataCommandHandler;
+        private readonly FetchChartExchangeDataCommandHandler _fetchChartExchangeDataCommandHandler;
         private readonly ILogger<StockDataController> _logger;
 
         public StockDataController(
             GetAllStockDataQueryHandler getAllStockDataQueryHandler,
-            FetchPolygonDataCommandHandler fetchPolygonDataCommandHandler,
+            FetchChartExchangeDataCommandHandler fetchChartExchangeDataCommandHandler,
             ILogger<StockDataController> logger)
         {
             _getAllStockDataQueryHandler = getAllStockDataQueryHandler;
-            _fetchPolygonDataCommandHandler = fetchPolygonDataCommandHandler;
+            _fetchChartExchangeDataCommandHandler = fetchChartExchangeDataCommandHandler;
             _logger = logger;
         }
 
@@ -39,7 +39,7 @@ namespace StockDataApi.Controllers
         public async Task<IActionResult> GetAllStockData(
             string symbol,
             [FromQuery] bool includeBorrowFee = true,
-            [FromQuery] bool includePolygon = true,
+            [FromQuery] bool includeChartExchange = true,
             [FromQuery] bool includeFinra = false)
         {
             try
@@ -50,7 +50,7 @@ namespace StockDataApi.Controllers
                     StartDate = null, // No date filtering - return all data
                     EndDate = null,   // No date filtering - return all data
                     IncludeBorrowFee = includeBorrowFee,
-                    IncludePolygon = includePolygon,
+                    IncludeChartExchange = includeChartExchange,
                     IncludeFinra = includeFinra
                 };
 
@@ -65,16 +65,16 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Fetch all Polygon data for a symbol (price, short interest, short volume)
+        /// Fetch all ChartExchange data for a symbol (price, failure to deliver, Reddit mentions, option chain, stock splits)
         /// Uses CQRS command handler
         /// </summary>
-        [HttpPost("{symbol}/fetch-polygon")]
-        public async Task<IActionResult> FetchPolygonData([FromRoute] string symbol)
+        [HttpPost("{symbol}/fetch-chartexchange")]
+        public async Task<IActionResult> FetchChartExchangeData([FromRoute] string symbol)
         {
             try
             {
-                var command = new FetchPolygonDataCommand { Symbol = symbol };
-                var result = await _fetchPolygonDataCommandHandler.Handle(command);
+                var command = new FetchChartExchangeDataCommand { Symbol = symbol };
+                var result = await _fetchChartExchangeDataCommandHandler.Handle(command);
 
                 if (result.Success)
                 {
@@ -83,8 +83,10 @@ namespace StockDataApi.Controllers
                         success = true,
                         symbol = result.Symbol,
                         prices = result.Prices,
-                        shortInterest = result.ShortInterest,
-                        shortVolume = result.ShortVolume
+                        failureToDeliver = result.FailureToDeliver,
+                        redditMentions = result.RedditMentions,
+                        optionChain = result.OptionChain,
+                        stockSplits = result.StockSplits
                     });
                 }
                 else
@@ -94,7 +96,7 @@ namespace StockDataApi.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching Polygon data for {Symbol}", symbol);
+                _logger.LogError(ex, "Error fetching ChartExchange data for {Symbol}", symbol);
                 return StatusCode(500, new { success = false, error = ex.Message });
             }
         }

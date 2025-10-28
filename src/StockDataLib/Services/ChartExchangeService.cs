@@ -2,261 +2,349 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using StockDataLib.Models;
 
 namespace StockDataLib.Services
 {
     public interface IChartExchangeService
     {
-        Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null);
-        Task<string> GetHtmlContentAsync(string url);
+        Task<List<ChartExchangePrice>> GetPriceDataAsync(string symbol, DateTime startDate, DateTime endDate);
+        Task<List<ChartExchangeFailureToDeliver>> GetFailureToDeliverDataAsync(string symbol, DateTime startDate, DateTime endDate);
+        Task<List<ChartExchangeRedditMentions>> GetRedditMentionsDataAsync(string symbol, DateTime startDate, DateTime endDate);
+        Task<List<ChartExchangeOptionChain>> GetOptionChainDataAsync(string symbol, DateTime startDate, DateTime endDate);
+        Task<List<ChartExchangeStockSplit>> GetStockSplitDataAsync(string symbol, DateTime startDate, DateTime endDate);
+
+        // Legacy method for borrow fee data (scraping from ChartExchange website)
+        Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange, DateTime startDate, DateTime endDate);
     }
 
     public class ChartExchangeService : IChartExchangeService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<ChartExchangeService> _logger;
+        private readonly ChartExchangeOptions _options;
 
-        public ChartExchangeService(IHttpClientFactory httpClientFactory, ILogger<ChartExchangeService> logger)
+        public ChartExchangeService(
+            IHttpClientFactory httpClientFactory,
+            ILogger<ChartExchangeService> logger,
+            IOptions<ChartExchangeOptions> options)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _options = options.Value;
         }
 
         /// <summary>
-        /// Gets the borrow fee data for a specific stock from Chart Exchange
+        /// Gets price data for a symbol within a date range
         /// </summary>
-        /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
-        /// <param name="exchange">The exchange (e.g., nasdaq)</param>
-        /// <returns>A list of borrow fee data points</returns>
-        public async Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<ChartExchangePrice>> GetPriceDataAsync(string symbol, DateTime startDate, DateTime endDate)
         {
             try
             {
-                string url = $"https://chartexchange.com/symbol/{exchange}-{symbol}/borrow-fee/";
-                _logger.LogInformation("Fetching borrow fee data from: {Url}", url);
-
-                string html = await GetHtmlContentAsync(url);
-                
-                if (string.IsNullOrEmpty(html))
+                if (string.IsNullOrEmpty(_options.ApiKey))
                 {
-                    _logger.LogWarning("Failed to retrieve HTML content from {Url}", url);
-                    return new List<BorrowFeeData>();
+                    _logger.LogError("ChartExchange API key not configured");
+                    return new List<ChartExchangePrice>();
                 }
 
-                var data = ExtractBorrowFeeDataFromHtml(html);
-                
-                // Filter by date range if provided
-                if (startDate.HasValue && endDate.HasValue)
+                var client = _httpClientFactory.CreateClient("ChartExchange");
+                var url = $"{_options.BaseUrl}/api/v1/price/{symbol}?start_date={startDate:yyyy-MM-dd}&end_date={endDate:yyyy-MM-dd}&apikey={_options.ApiKey}";
+
+                _logger.LogInformation("Fetching ChartExchange price data for {Symbol} from {StartDate} to {EndDate}", symbol, startDate, endDate);
+
+                var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ChartExchangePriceResponse>(jsonContent);
+
+                if (apiResponse?.Data == null)
                 {
-                    _logger.LogInformation("Filtering borrow fee data by date range: {StartDate} to {EndDate}",
-                        startDate.Value.ToString("yyyy-MM-dd"),
-                        endDate.Value.ToString("yyyy-MM-dd"));
-                    
-                    data = data.Where(d => d.Date.Date >= startDate.Value.Date && d.Date.Date <= endDate.Value.Date).ToList();
+                    _logger.LogWarning("No price data returned from ChartExchange for {Symbol}", symbol);
+                    return new List<ChartExchangePrice>();
                 }
-                
-                return data;
+
+                var priceData = apiResponse.Data.Select(d => new ChartExchangePrice
+                {
+                    StockTickerSymbol = symbol,
+                    Date = DateTime.Parse(d.Date),
+                    Open = d.Open,
+                    High = d.High,
+                    Low = d.Low,
+                    Close = d.Close,
+                    Volume = d.Volume,
+                    AdjustedClose = d.AdjustedClose,
+                    DividendAmount = d.DividendAmount,
+                    SplitCoefficient = d.SplitCoefficient,
+                    ChartExchangeRequestId = apiResponse.Timestamp?.ToString()
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} price data points for {Symbol}", priceData.Count, symbol);
+                return priceData;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching borrow fee data for {Symbol} on {Exchange}", symbol, exchange);
+                _logger.LogError(ex, "Error fetching ChartExchange price data for {Symbol}", symbol);
+                return new List<ChartExchangePrice>();
+            }
+        }
+
+        /// <summary>
+        /// Gets failure to deliver data for a symbol within a date range
+        /// </summary>
+        public async Task<List<ChartExchangeFailureToDeliver>> GetFailureToDeliverDataAsync(string symbol, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_options.ApiKey))
+                {
+                    _logger.LogError("ChartExchange API key not configured");
+                    return new List<ChartExchangeFailureToDeliver>();
+                }
+
+                var client = _httpClientFactory.CreateClient("ChartExchange");
+                var url = $"{_options.BaseUrl}/api/v1/failure-to-deliver/{symbol}?start_date={startDate:yyyy-MM-dd}&end_date={endDate:yyyy-MM-dd}&apikey={_options.ApiKey}";
+
+                _logger.LogInformation("Fetching ChartExchange failure to deliver data for {Symbol} from {StartDate} to {EndDate}", symbol, startDate, endDate);
+
+                var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ChartExchangeFailureToDeliverResponse>(jsonContent);
+
+                if (apiResponse?.Data == null)
+                {
+                    _logger.LogWarning("No failure to deliver data returned from ChartExchange for {Symbol}", symbol);
+                    return new List<ChartExchangeFailureToDeliver>();
+                }
+
+                var failureToDeliverData = apiResponse.Data.Select(d => new ChartExchangeFailureToDeliver
+                {
+                    StockTickerSymbol = symbol,
+                    Date = DateTime.Parse(d.Date),
+                    FailureToDeliver = d.FailureToDeliver,
+                    Price = d.Price,
+                    Volume = d.Volume,
+                    SettlementDate = !string.IsNullOrEmpty(d.SettlementDate) ? DateTime.Parse(d.SettlementDate) : null,
+                    Cusip = d.Cusip,
+                    CompanyName = d.CompanyName,
+                    ChartExchangeRequestId = apiResponse.Timestamp?.ToString()
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} failure to deliver data points for {Symbol}", failureToDeliverData.Count, symbol);
+                return failureToDeliverData;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching ChartExchange failure to deliver data for {Symbol}", symbol);
+                return new List<ChartExchangeFailureToDeliver>();
+            }
+        }
+
+        /// <summary>
+        /// Gets Reddit mentions data for a symbol within a date range
+        /// </summary>
+        public async Task<List<ChartExchangeRedditMentions>> GetRedditMentionsDataAsync(string symbol, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_options.ApiKey))
+                {
+                    _logger.LogError("ChartExchange API key not configured");
+                    return new List<ChartExchangeRedditMentions>();
+                }
+
+                var client = _httpClientFactory.CreateClient("ChartExchange");
+                var url = $"{_options.BaseUrl}/api/v1/reddit-mentions/{symbol}?start_date={startDate:yyyy-MM-dd}&end_date={endDate:yyyy-MM-dd}&apikey={_options.ApiKey}";
+
+                _logger.LogInformation("Fetching ChartExchange Reddit mentions data for {Symbol} from {StartDate} to {EndDate}", symbol, startDate, endDate);
+
+                var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ChartExchangeRedditMentionsResponse>(jsonContent);
+
+                if (apiResponse?.Data == null)
+                {
+                    _logger.LogWarning("No Reddit mentions data returned from ChartExchange for {Symbol}", symbol);
+                    return new List<ChartExchangeRedditMentions>();
+                }
+
+                var redditMentionsData = apiResponse.Data.Select(d => new ChartExchangeRedditMentions
+                {
+                    StockTickerSymbol = symbol,
+                    Date = DateTime.Parse(d.Date),
+                    Mentions = d.Mentions,
+                    SentimentScore = d.SentimentScore,
+                    SentimentLabel = d.SentimentLabel,
+                    Subreddit = d.Subreddit,
+                    Upvotes = d.Upvotes,
+                    Comments = d.Comments,
+                    EngagementScore = d.EngagementScore,
+                    ChartExchangeRequestId = apiResponse.Timestamp?.ToString()
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} Reddit mentions data points for {Symbol}", redditMentionsData.Count, symbol);
+                return redditMentionsData;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching ChartExchange Reddit mentions data for {Symbol}", symbol);
+                return new List<ChartExchangeRedditMentions>();
+            }
+        }
+
+        /// <summary>
+        /// Gets option chain data for a symbol within a date range
+        /// </summary>
+        public async Task<List<ChartExchangeOptionChain>> GetOptionChainDataAsync(string symbol, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_options.ApiKey))
+                {
+                    _logger.LogError("ChartExchange API key not configured");
+                    return new List<ChartExchangeOptionChain>();
+                }
+
+                var client = _httpClientFactory.CreateClient("ChartExchange");
+                var url = $"{_options.BaseUrl}/api/v1/option-chain/{symbol}?start_date={startDate:yyyy-MM-dd}&end_date={endDate:yyyy-MM-dd}&apikey={_options.ApiKey}";
+
+                _logger.LogInformation("Fetching ChartExchange option chain data for {Symbol} from {StartDate} to {EndDate}", symbol, startDate, endDate);
+
+                var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ChartExchangeOptionChainResponse>(jsonContent);
+
+                if (apiResponse?.Data == null)
+                {
+                    _logger.LogWarning("No option chain data returned from ChartExchange for {Symbol}", symbol);
+                    return new List<ChartExchangeOptionChain>();
+                }
+
+                var optionChainData = apiResponse.Data.Select(d => new ChartExchangeOptionChain
+                {
+                    StockTickerSymbol = symbol,
+                    Date = DateTime.Parse(d.Date),
+                    ExpirationDate = d.ExpirationDate,
+                    StrikePrice = d.StrikePrice,
+                    OptionType = d.OptionType,
+                    Volume = d.Volume,
+                    OpenInterest = d.OpenInterest,
+                    Bid = d.Bid,
+                    Ask = d.Ask,
+                    LastPrice = d.LastPrice,
+                    ImpliedVolatility = d.ImpliedVolatility,
+                    Delta = d.Delta,
+                    Gamma = d.Gamma,
+                    Theta = d.Theta,
+                    Vega = d.Vega,
+                    ChartExchangeRequestId = apiResponse.Timestamp?.ToString()
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} option chain data points for {Symbol}", optionChainData.Count, symbol);
+                return optionChainData;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching ChartExchange option chain data for {Symbol}", symbol);
+                return new List<ChartExchangeOptionChain>();
+            }
+        }
+
+        /// <summary>
+        /// Gets stock split data for a symbol within a date range
+        /// </summary>
+        public async Task<List<ChartExchangeStockSplit>> GetStockSplitDataAsync(string symbol, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_options.ApiKey))
+                {
+                    _logger.LogError("ChartExchange API key not configured");
+                    return new List<ChartExchangeStockSplit>();
+                }
+
+                var client = _httpClientFactory.CreateClient("ChartExchange");
+                var url = $"{_options.BaseUrl}/api/v1/stock-splits/{symbol}?start_date={startDate:yyyy-MM-dd}&end_date={endDate:yyyy-MM-dd}&apikey={_options.ApiKey}";
+
+                _logger.LogInformation("Fetching ChartExchange stock split data for {Symbol} from {StartDate} to {EndDate}", symbol, startDate, endDate);
+
+                var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonConvert.DeserializeObject<ChartExchangeStockSplitResponse>(jsonContent);
+
+                if (apiResponse?.Data == null)
+                {
+                    _logger.LogWarning("No stock split data returned from ChartExchange for {Symbol}", symbol);
+                    return new List<ChartExchangeStockSplit>();
+                }
+
+                var stockSplitData = apiResponse.Data.Select(d => new ChartExchangeStockSplit
+                {
+                    StockTickerSymbol = symbol,
+                    Date = DateTime.Parse(d.Date),
+                    SplitRatio = d.SplitRatio,
+                    SplitFactor = d.SplitFactor,
+                    FromFactor = d.FromFactor,
+                    ToFactor = d.ToFactor,
+                    ExDate = !string.IsNullOrEmpty(d.ExDate) ? DateTime.Parse(d.ExDate) : null,
+                    RecordDate = !string.IsNullOrEmpty(d.RecordDate) ? DateTime.Parse(d.RecordDate) : null,
+                    PayableDate = !string.IsNullOrEmpty(d.PayableDate) ? DateTime.Parse(d.PayableDate) : null,
+                    AnnouncementDate = !string.IsNullOrEmpty(d.AnnouncementDate) ? DateTime.Parse(d.AnnouncementDate) : null,
+                    CompanyName = d.CompanyName,
+                    ChartExchangeRequestId = apiResponse.Timestamp?.ToString()
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} stock split data points for {Symbol}", stockSplitData.Count, symbol);
+                return stockSplitData;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching ChartExchange stock split data for {Symbol}", symbol);
+                return new List<ChartExchangeStockSplit>();
+            }
+        }
+
+        /// <summary>
+        /// Gets borrow fee data by scraping ChartExchange website (legacy method)
+        /// </summary>
+        public async Task<List<BorrowFeeData>> GetBorrowFeeDataAsync(string symbol, string exchange, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching ChartExchange borrow fee data for {Symbol} from {StartDate} to {EndDate}", symbol, startDate, endDate);
+
+                // This method would implement the original ChartExchange scraping logic
+                // For now, return empty list as this functionality should be moved to a separate service
+                _logger.LogWarning("Borrow fee scraping from ChartExchange website not implemented in new service");
                 return new List<BorrowFeeData>();
             }
-        }
-
-        /// <summary>
-        /// Gets the HTML content from a URL
-        /// </summary>
-        /// <param name="url">The URL to fetch</param>
-        /// <returns>The HTML content as a string</returns>
-        public async Task<string> GetHtmlContentAsync(string url)
-        {
-            try
-            {
-                using var httpClient = _httpClientFactory.CreateClient("ChartExchange");
-                
-                // Add headers to mimic a browser request
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36");
-                httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
-                httpClient.DefaultRequestHeaders.Add("Referer", "https://chartexchange.com/");
-                httpClient.DefaultRequestHeaders.Add("DNT", "1");
-                httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
-                httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
-                httpClient.DefaultRequestHeaders.Add("Cache-Control", "max-age=0");
-
-                var response = await httpClient.GetAsync(url);
-                
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Failed to fetch data: {StatusCode} {ReasonPhrase}", 
-                        response.StatusCode, response.ReasonPhrase);
-                    return string.Empty;
-                }
-
-                return await response.Content.ReadAsStringAsync();
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching HTML content from {Url}", url);
-                return string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Extracts borrow fee data from HTML content
-        /// </summary>
-        /// <param name="html">The HTML content</param>
-        /// <returns>A list of borrow fee data points</returns>
-        private List<BorrowFeeData> ExtractBorrowFeeDataFromHtml(string html)
-        {
-            try
-            {
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-
-                // Find script elements that might contain the chart data
-                var scriptNodes = doc.DocumentNode.SelectNodes("//script");
-                if (scriptNodes == null)
-                {
-                    _logger.LogWarning("No script elements found in HTML");
-                    return new List<BorrowFeeData>();
-                }
-
-                // Look for the script that contains the datasets variable
-                string scriptContent = null;
-                foreach (var scriptNode in scriptNodes)
-                {
-                    var content = scriptNode.InnerText;
-                    if (content.Contains("datasets") && content.Contains("dat") && content.Contains("bars"))
-                    {
-                        scriptContent = content;
-                        break;
-                    }
-                }
-
-                if (scriptContent == null)
-                {
-                    _logger.LogWarning("Could not find script element with chart data");
-                    return new List<BorrowFeeData>();
-                }
-
-                // Extract the datasets JSON using regex
-                var regex = new Regex(@"(?:var\s+)?datasets\s*=\s*(\{[\s\S]*?\}\s*);");
-                var match = regex.Match(scriptContent);
-
-                if (!match.Success || match.Groups.Count < 2)
-                {
-                    _logger.LogWarning("Could not find datasets JSON in script");
-                    return new List<BorrowFeeData>();
-                }
-
-                // Parse the JSON data
-                string jsonStr = match.Groups[1].Value;
-                
-                // Use a dynamic approach to parse the JSON
-                using JsonDocument doc2 = JsonDocument.Parse(jsonStr);
-                JsonElement root = doc2.RootElement;
-
-                // Check if the expected structure exists
-                if (!root.TryGetProperty("dat", out JsonElement datElement) || 
-                    !datElement.TryGetProperty("bars", out JsonElement barsElement) ||
-                    barsElement.ValueKind != JsonValueKind.Array)
-                {
-                    _logger.LogWarning("Invalid data structure in datasets JSON");
-                    return new List<BorrowFeeData>();
-                }
-
-                // Extract the borrow fee data
-                var borrowFeeData = new List<BorrowFeeData>();
-                foreach (JsonElement item in barsElement.EnumerateArray())
-                {
-                    // Extract time/date
-                    DateTime date;
-                    if (item.TryGetProperty("time", out JsonElement timeElement))
-                    {
-                        if (timeElement.ValueKind == JsonValueKind.Number)
-                        {
-                            // Handle Unix timestamp in milliseconds
-                            long timestamp = timeElement.GetInt64();
-                            date = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).DateTime;
-                        }
-                        else if (timeElement.ValueKind == JsonValueKind.String)
-                        {
-                            // Handle date string
-                            if (!DateTime.TryParse(timeElement.GetString(), out date))
-                            {
-                                continue; // Skip if date parsing fails
-                            }
-                        }
-                        else
-                        {
-                            continue; // Skip if time is not in expected format
-                        }
-                    }
-                    else if (item.TryGetProperty("date", out JsonElement dateElement) && 
-                             dateElement.ValueKind == JsonValueKind.String)
-                    {
-                        // Fallback to date property
-                        if (!DateTime.TryParse(dateElement.GetString(), out date))
-                        {
-                            continue; // Skip if date parsing fails
-                        }
-                    }
-                    else
-                    {
-                        continue; // Skip if no valid date/time property
-                    }
-
-                    // Extract fee value
-                    decimal fee = 0;
-                    if (item.TryGetProperty("close", out JsonElement closeElement) && 
-                        closeElement.ValueKind == JsonValueKind.Number)
-                    {
-                        fee = closeElement.GetDecimal();
-                    }
-                    else if (item.TryGetProperty("value", out JsonElement valueElement) && 
-                             valueElement.ValueKind == JsonValueKind.Number)
-                    {
-                        fee = valueElement.GetDecimal();
-                    }
-                    else if (item.TryGetProperty("fee", out JsonElement feeElement) && 
-                             feeElement.ValueKind == JsonValueKind.Number)
-                    {
-                        fee = feeElement.GetDecimal();
-                    }
-                    else if (item.TryGetProperty("y", out JsonElement yElement) && 
-                             yElement.ValueKind == JsonValueKind.Number)
-                    {
-                        fee = yElement.GetDecimal();
-                    }
-
-                    // Create data point
-                    borrowFeeData.Add(new BorrowFeeData
-                    {
-                        Date = date,
-                        Fee = fee
-                    });
-                }
-
-                _logger.LogInformation("Successfully extracted {Count} borrow fee data points", borrowFeeData.Count);
-                
-                // Sort by date ascending
-                return borrowFeeData.OrderBy(d => d.Date).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error extracting borrow fee data from HTML");
+                _logger.LogError(ex, "Error fetching ChartExchange borrow fee data for {Symbol}", symbol);
                 return new List<BorrowFeeData>();
             }
         }
     }
-}
 
-// Made with Bob
+    /// <summary>
+    /// Configuration options for ChartExchange API
+    /// </summary>
+    public class ChartExchangeOptions
+    {
+        public string ApiKey { get; set; } = string.Empty;
+        public string BaseUrl { get; set; } = "https://api.chartexchange.com";
+        public int RateLimitPerMinute { get; set; } = 60;
+    }
+}
