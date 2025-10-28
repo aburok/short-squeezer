@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Card, Col, Container, Dropdown, Row, Spinner } from 'react-bootstrap';
+import { Alert, Card, Col, Container, Row } from 'react-bootstrap';
 import { Line } from 'react-chartjs-2';
 import BorrowFeeChart from './BorrowFeeChart';
 import FinraShortInterestChart from './FinraShortInterestChart';
@@ -17,17 +17,23 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     endDate: new Date()
   });
+  
+  // Store all data (unfiltered)
+  const [allShortInterestData, setAllShortInterestData] = useState([]);
+  const [allShortVolumeData, setAllShortVolumeData] = useState([]);
+  const [allBorrowFeeData, setAllBorrowFeeData] = useState([]);
+  const [allChartExchangeShortInterestData, setAllChartExchangeShortInterestData] = useState([]);
+  const [allChartExchangeShortVolumeData, setAllChartExchangeShortVolumeData] = useState([]);
+  
+  // Filtered data for display
   const [shortInterestData, setShortInterestData] = useState([]);
   const [shortVolumeData, setShortVolumeData] = useState([]);
   const [borrowFeeData, setBorrowFeeData] = useState([]);
-  const [polygonShortInterestData, setPolygonShortInterestData] = useState([]);
-  const [polygonShortVolumeData, setPolygonShortVolumeData] = useState([]);
+  const [chartExchangeShortInterestData, setChartExchangeShortInterestData] = useState([]);
+  const [chartExchangeShortVolumeData, setChartExchangeShortVolumeData] = useState([]);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
-  const [isFetchingBlocks, setIsFetchingBlocks] = useState(false);
-  const [isFetchingPolygon, setIsFetchingPolygon] = useState(false);
-  const [isFetchingAllPolygon, setIsFetchingAllPolygon] = useState(false);
 
   const handleTickerSelect = (ticker: string) => {
     onTickerSelect(ticker);
@@ -36,156 +42,25 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
     setDateRange({ startDate, endDate });
+    // Apply filtering immediately when date range changes
+    applyDateFiltering(startDate, endDate);
   };
 
-  const handleRefreshAllTickers = async () => {
-    setIsRefreshingAll(true);
-    try {
-      const response = await fetch('/api/Tickers/refresh-all', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+  // Function to filter data by date range
+  const applyDateFiltering = (startDate: Date, endDate: Date) => {
+    const filterByDate = (data: any[]) => {
+      return data.filter(item => {
+        const itemDate = new Date(item.date || item.Date);
+        return itemDate >= startDate && itemDate <= endDate;
       });
+    };
 
-      if (response.ok) {
-        setError('All tickers refreshed successfully!');
-        // Reset selected ticker to force refresh
-        setSelectedTicker('');
-      } else {
-        setError('Failed to refresh tickers');
-      }
-    } catch (err) {
-      setError('Error refreshing tickers: ' + (err as Error).message);
-    } finally {
-      setIsRefreshingAll(false);
-    }
-  };
-
-  const handleFetchBlocksSummary = async () => {
-    setIsFetchingBlocks(true);
-    setError('');
-
-    try {
-      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
-      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
-
-      const response = await fetch(
-        `/api/Finra/blocks-summary/fetch?startDate=${startDateStr}&endDate=${endDateStr}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setError(`Successfully fetched ${result.count} blocks summary data points!`);
-      } else {
-        setError(result.message || 'Failed to fetch blocks summary data');
-      }
-    } catch (err) {
-      setError('Error fetching blocks summary: ' + (err as Error).message);
-    } finally {
-      setIsFetchingBlocks(false);
-    }
-  };
-
-  const handleFetchPolygonData = async () => {
-    if (!selectedTicker) {
-      setError('Please select a ticker first');
-      return;
-    }
-
-    setIsFetchingPolygon(true);
-    setError('');
-
-    try {
-      const response = await fetch(
-        `/api/Polygon/${selectedTicker}/fetch?years=2`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setError(`Successfully fetched ${result.count} new Polygon data points (2 years) for ${selectedTicker}!`);
-        // Refresh the chart data
-        fetchData();
-      } else {
-        setError(result.message || 'Failed to fetch Polygon data');
-      }
-    } catch (err) {
-      setError('Error fetching Polygon data: ' + (err as Error).message);
-    } finally {
-      setIsFetchingPolygon(false);
-    }
-  };
-
-  const handleFetchAllPolygonData = async () => {
-    if (!selectedTicker) {
-      setError('Please select a ticker first');
-      return;
-    }
-
-    setIsFetchingAllPolygon(true);
-    setError('');
-
-    try {
-      const response = await fetch(
-        `/api/StockData/${selectedTicker}/fetch-polygon`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        let message = `Polygon data for ${selectedTicker}: `;
-        const parts = [];
-
-        if (result.prices.skipped) {
-          parts.push(`Prices (skipped - data exists)`);
-        } else {
-          parts.push(`Prices (${result.prices.fetched} records)`);
-        }
-
-        if (result.shortInterest.skipped) {
-          parts.push(`Short Interest (skipped - data exists)`);
-        } else {
-          parts.push(`Short Interest (${result.shortInterest.fetched} records)`);
-        }
-
-        if (result.shortVolume.skipped) {
-          parts.push(`Short Volume (skipped - data exists)`);
-        } else {
-          parts.push(`Short Volume (${result.shortVolume.fetched} records)`);
-        }
-
-        message += parts.join(', ');
-        setError(message);
-        // Refresh the chart data
-        fetchData();
-      } else {
-        setError(result.error || 'Failed to fetch Polygon data');
-      }
-    } catch (err) {
-      setError('Error fetching Polygon data: ' + (err as Error).message);
-    } finally {
-      setIsFetchingAllPolygon(false);
-    }
+    // Apply filtering to all data arrays
+    setShortInterestData(filterByDate(allShortInterestData));
+    setShortVolumeData(filterByDate(allShortVolumeData));
+    setBorrowFeeData(filterByDate(allBorrowFeeData));
+    setChartExchangeShortInterestData(filterByDate(allChartExchangeShortInterestData));
+    setChartExchangeShortVolumeData(filterByDate(allChartExchangeShortVolumeData));
   };
 
   const fetchData = async () => {
@@ -195,18 +70,16 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
     setError('');
 
     try {
-      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
-      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      // Fetch ALL data without date filtering
+      console.log(`Fetching all data for ${selectedTicker}...`);
 
-      // Don't fetch FINRA data, only Polygon data
-      // Set empty arrays for non-Polygon data
-      setShortInterestData([]);
-      setShortVolumeData([]);
+      // Don't fetch FINRA data, only ChartExchange data
+      // Set empty arrays for non-ChartExchange data
+      setAllShortInterestData([]);
+      setAllShortVolumeData([]);
 
-      // Fetch borrow fee data
-      const borrowFeeResponse = await fetch(
-        `/api/BorrowFee/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}`
-      );
+      // Fetch ALL borrow fee data (no date filtering)
+      const borrowFeeResponse = await fetch(`/api/BorrowFee/${selectedTicker}`);
       const borrowFeeResult = await borrowFeeResponse.json();
 
       // Debug logging
@@ -235,38 +108,65 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
       console.log('Transformed Borrow Fee Data:', transformedBorrowFeeData);
       console.log('Transformed Data Length:', transformedBorrowFeeData?.length);
 
-      setBorrowFeeData(transformedBorrowFeeData);
+      setAllBorrowFeeData(transformedBorrowFeeData);
 
-      // Fetch all Polygon data from unified endpoint
+      // Fetch ALL Short Interest data (no date filtering)
+      try {
+        const shortInterestResponse = await fetch(`/api/ShortInterest/${selectedTicker}`);
+        if (shortInterestResponse.ok) {
+          const shortInterestResult = await shortInterestResponse.json();
+          console.log('Short Interest API Response:', shortInterestResult);
+          setAllShortInterestData(shortInterestResult);
+        }
+      } catch (err) {
+        console.warn('Error fetching Short Interest data:', err);
+      }
+
+      // Fetch ALL Short Volume data (no date filtering)
+      try {
+        const shortVolumeResponse = await fetch(`/api/ShortVolume/${selectedTicker}`);
+        if (shortVolumeResponse.ok) {
+          const shortVolumeResult = await shortVolumeResponse.json();
+          console.log('Short Volume API Response:', shortVolumeResult);
+          setAllShortVolumeData(shortVolumeResult);
+        }
+      } catch (err) {
+        console.warn('Error fetching Short Volume data:', err);
+      }
+
+      // Fetch ALL ChartExchange data from unified endpoint (no date filtering)
       try {
         const stockDataResponse = await fetch(
-          `/api/StockData/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}&includePolygon=true&includeBorrowFee=false`
+          `/api/StockData/${selectedTicker}?includeChartExchange=true&includeBorrowFee=false`
         );
         if (stockDataResponse.ok) {
           const stockData = await stockDataResponse.json();
           console.log('Stock Data Response:', stockData);
 
-          // Extract Polygon short interest data
-          if (stockData.polygonData?.shortInterestData) {
-            setPolygonShortInterestData(stockData.polygonData.shortInterestData);
+          // Extract ChartExchange short interest data
+          if (stockData.chartExchangeData?.shortInterestData) {
+            setAllChartExchangeShortInterestData(stockData.chartExchangeData.shortInterestData);
           }
 
-          // Extract Polygon short volume data
-          if (stockData.polygonData?.shortVolumeData) {
+          // Extract ChartExchange short volume data
+          if (stockData.chartExchangeData?.shortVolumeData) {
             // Transform to match chart format
-            const transformedPolygonShortVolume = stockData.polygonData.shortVolumeData.map((item: any) => ({
+            const transformedChartExchangeShortVolume = stockData.chartExchangeData.shortVolumeData.map((item: any) => ({
               date: item.date || item.Date,
               shortVolume: Number(item.shortVolume || 0),
               totalVolume: Number(item.totalVolume || 0),
               shortVolumePercent: Number(item.shortVolumeRatio || 0)
             }));
 
-            setPolygonShortVolumeData(transformedPolygonShortVolume);
+            setAllChartExchangeShortVolumeData(transformedChartExchangeShortVolume);
           }
         }
       } catch (err) {
-        console.warn('Error fetching Polygon data:', err);
+        console.warn('Error fetching ChartExchange data:', err);
       }
+
+      // Apply initial date filtering to display data
+      applyDateFiltering(dateRange.startDate, dateRange.endDate);
 
     } catch (err) {
       setError('Error fetching data: ' + (err as Error).message);
@@ -281,79 +181,12 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
 
   return (
     <Container fluid className="py-3">
-      {/* Controls Section */}
-          {/* Actions Row */}
-          <Row className="mb-3">
-            <Col md={12} className="d-flex justify-content-end">
-              <Dropdown>
-                <Dropdown.Toggle variant="primary" id="actions-dropdown">
-                  Actions
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    onClick={handleFetchPolygonData}
-                    disabled={!selectedTicker || isFetchingPolygon}
-                  >
-                    {isFetchingPolygon ? (
-                      <>
-                        <Spinner size="sm" className="me-2" />
-                        Fetching...
-                      </>
-                    ) : (
-                      'Fetch Polygon Price Data'
-                    )}
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={handleFetchAllPolygonData}
-                    disabled={!selectedTicker || isFetchingAllPolygon}
-                  >
-                    {isFetchingAllPolygon ? (
-                      <>
-                        <Spinner size="sm" className="me-2" />
-                        Fetching All...
-                      </>
-                    ) : (
-                      'Fetch All Polygon Data'
-                    )}
-                  </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Item
-                    onClick={handleRefreshAllTickers}
-                    disabled={isRefreshingAll}
-                  >
-                    {isRefreshingAll ? (
-                      <>
-                        <Spinner size="sm" className="me-2" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      'Refresh All Tickers'
-                    )}
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={handleFetchBlocksSummary}
-                    disabled={isFetchingBlocks}
-                  >
-                    {isFetchingBlocks ? (
-                      <>
-                        <Spinner size="sm" className="me-2" />
-                        Fetching...
-                      </>
-                    ) : (
-                      'Fetch FINRA Blocks Summary'
-                    )}
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </Col>
-          </Row>
-
-          {/* Date Range Picker */}
-          <Row>
-            <Col>
-              <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
-            </Col>
-          </Row>
+      {/* Date Range Picker */}
+      <Row className="mb-4">
+        <Col>
+          <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
+        </Col>
+      </Row>
 
       {/* Error Alert */}
       {error && (
