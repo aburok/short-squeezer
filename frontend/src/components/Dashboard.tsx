@@ -17,21 +17,21 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     endDate: new Date()
   });
-  
+
   // Store all data (unfiltered)
   const [allShortInterestData, setAllShortInterestData] = useState([]);
   const [allShortVolumeData, setAllShortVolumeData] = useState([]);
   const [allBorrowFeeData, setAllBorrowFeeData] = useState([]);
   const [allChartExchangeShortInterestData, setAllChartExchangeShortInterestData] = useState([]);
   const [allChartExchangeShortVolumeData, setAllChartExchangeShortVolumeData] = useState([]);
-  
+
   // Filtered data for display
   const [shortInterestData, setShortInterestData] = useState([]);
   const [shortVolumeData, setShortVolumeData] = useState([]);
   const [borrowFeeData, setBorrowFeeData] = useState([]);
   const [chartExchangeShortInterestData, setChartExchangeShortInterestData] = useState([]);
   const [chartExchangeShortVolumeData, setChartExchangeShortVolumeData] = useState([]);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -177,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
 
   useEffect(() => {
     fetchData();
-  }, [selectedTicker, dateRange]);
+  }, [selectedTicker]); // Only fetch when ticker changes, not when date range changes
 
   return (
     <Container fluid className="py-3">
@@ -231,22 +231,22 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
             </Col>
           </Row>
 
-          {/* Polygon Data Charts */}
-          {polygonShortInterestData.length > 0 && (
+          {/* ChartExchange Data Charts */}
+          {chartExchangeShortInterestData.length > 0 && (
             <Row className="mb-4">
               <Col md={6}>
                 <Card>
                   <Card.Header>
-                    <h5 className="mb-0">Polygon Short Interest - {selectedTicker}</h5>
+                    <h5 className="mb-0">Short Interest - {selectedTicker}</h5>
                   </Card.Header>
                   <Card.Body>
                     <div style={{ height: '300px' }}>
                       <Line
                         data={{
-                          labels: polygonShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
+                          labels: chartExchangeShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
                           datasets: [{
                             label: 'Short Interest',
-                            data: polygonShortInterestData.map((item: any) => Number(item.shortInterest || 0)),
+                            data: chartExchangeShortInterestData.map((item: any) => Number(item.shortInterest || 0)),
                             borderColor: 'rgb(255, 99, 132)',
                             backgroundColor: 'rgba(255, 99, 132, 0.1)',
                             borderWidth: 2,
@@ -265,21 +265,21 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect })
             </Row>
           )}
 
-          {polygonShortVolumeData.length > 0 && (
+          {chartExchangeShortVolumeData.length > 0 && (
             <Row className="mb-4">
               <Col md={6}>
                 <Card>
                   <Card.Header>
-                    <h5 className="mb-0">Polygon Short Volume - {selectedTicker}</h5>
+                    <h5 className="mb-0">Short Volume - {selectedTicker}</h5>
                   </Card.Header>
                   <Card.Body>
                     <div style={{ height: '300px' }}>
                       <Line
                         data={{
-                          labels: polygonShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
+                          labels: chartExchangeShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
                           datasets: [{
                             label: 'Short Volume %',
-                            data: polygonShortVolumeData.map((item: any) => Number(item.shortVolumePercent || 0)),
+                            data: chartExchangeShortVolumeData.map((item: any) => Number(item.shortVolumePercent || 0)),
                             borderColor: 'rgb(54, 162, 235)',
                             backgroundColor: 'rgba(54, 162, 235, 0.1)',
                             borderWidth: 2,

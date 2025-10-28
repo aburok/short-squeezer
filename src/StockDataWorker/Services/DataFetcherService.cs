@@ -19,7 +19,6 @@ namespace StockDataWorker.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly DataFetcherOptions _options;
         private readonly IChartExchangeService _chartExchangeService;
-        private readonly IAlphaVantageService _alphaVantageService;
         private readonly IFinraService _finraService;
 
         public DataFetcherService(
@@ -27,14 +26,12 @@ namespace StockDataWorker.Services
             IServiceProvider serviceProvider,
             IOptions<DataFetcherOptions> options,
             IChartExchangeService chartExchangeService,
-            IAlphaVantageService alphaVantageService,
             IFinraService finraService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
             _options = options.Value;
             _chartExchangeService = chartExchangeService;
-            _alphaVantageService = alphaVantageService;
             _finraService = finraService;
         }
 
@@ -88,12 +85,6 @@ namespace StockDataWorker.Services
                         await FetchBorrowFeeDataAsync(dbContext, ticker, stoppingToken);
                     }
 
-                    // Fetch price data
-                    if (_options.EnablePriceDataFetching)
-                    {
-                        await FetchPriceDataAsync(dbContext, ticker, stoppingToken);
-                    }
-
                     // Fetch FINRA short interest data
                     if (_options.EnableFinraDataFetching)
                     {
@@ -139,30 +130,6 @@ namespace StockDataWorker.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching borrow fee data for {Symbol}", ticker.Symbol);
-            }
-        }
-
-        private async Task FetchPriceDataAsync(StockDataContext dbContext, StockTicker ticker, CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("Fetching price data for {Symbol}", ticker.Symbol);
-            
-            try
-            {
-                var priceData = await _alphaVantageService.GetDailyPriceDataAsync(ticker.Symbol);
-                
-                if (priceData.Any())
-                {
-                    await UpdatePriceDataAsync(dbContext, ticker.Symbol, priceData, stoppingToken);
-                    _logger.LogInformation("Successfully updated price data for {Symbol}", ticker.Symbol);
-                }
-                else
-                {
-                    _logger.LogWarning("No price data found for {Symbol}", ticker.Symbol);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching price data for {Symbol}", ticker.Symbol);
             }
         }
 

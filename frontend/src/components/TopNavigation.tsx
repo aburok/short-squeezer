@@ -4,25 +4,25 @@ import { Link } from 'react-router-dom';
 import TickerSearch from './TickerSearch';
 
 interface TopNavigationProps {
-  selectedTicker: string;
-  onTickerSelect: (ticker: string) => void;
-  onFetchChartExchangeData: () => void;
-  onRefreshAllTickers: () => void;
-  onFetchBlocksSummary: () => void;
-  isFetchingChartExchange: boolean;
-  isRefreshingAll: boolean;
-  isFetchingBlocks: boolean;
+    selectedTicker: string;
+    onTickerSelect: (ticker: string) => void;
+    onFetchChartExchangeData: () => void;
+    onRefreshAllTickers: () => void;
+    onFetchBlocksSummary: () => void;
+    isFetchingChartExchange: boolean;
+    isRefreshingAll: boolean;
+    isFetchingBlocks: boolean;
 }
 
-const TopNavigation: React.FC<TopNavigationProps> = ({ 
-  selectedTicker, 
-  onTickerSelect,
-  onFetchChartExchangeData,
-  onRefreshAllTickers,
-  onFetchBlocksSummary,
-  isFetchingChartExchange,
-  isRefreshingAll,
-  isFetchingBlocks
+const TopNavigation: React.FC<TopNavigationProps> = ({
+    selectedTicker,
+    onTickerSelect,
+    onFetchChartExchangeData,
+    onRefreshAllTickers,
+    onFetchBlocksSummary,
+    isFetchingChartExchange,
+    isRefreshingAll,
+    isFetchingBlocks
 }) => {
     const [recentlyViewedTickers, setRecentlyViewedTickers] = useState<string[]>([]);
 
@@ -103,29 +103,16 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu>
                                     <Dropdown.Item
-                                        onClick={onFetchPolygonData}
-                                        disabled={!selectedTicker || isFetchingPolygon}
+                                        onClick={onFetchChartExchangeData}
+                                        disabled={!selectedTicker || isFetchingChartExchange}
                                     >
-                                        {isFetchingPolygon ? (
+                                        {isFetchingChartExchange ? (
                                             <>
                                                 <Spinner size="sm" className="me-2" />
                                                 Fetching...
                                             </>
                                         ) : (
-                                            'Fetch Polygon Price Data'
-                                        )}
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                        onClick={onFetchAllPolygonData}
-                                        disabled={!selectedTicker || isFetchingAllPolygon}
-                                    >
-                                        {isFetchingAllPolygon ? (
-                                            <>
-                                                <Spinner size="sm" className="me-2" />
-                                                Fetching All...
-                                            </>
-                                        ) : (
-                                            'Fetch All Polygon Data'
+                                            'Fetch All ChartExchange Data'
                                         )}
                                     </Dropdown.Item>
                                     <Dropdown.Divider />

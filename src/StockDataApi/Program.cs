@@ -69,17 +69,12 @@ builder.Services.AddCors(options =>
 
 // Register services
 builder.Services.AddScoped<IChartExchangeService, ChartExchangeService>();
-builder.Services.AddScoped<IAlphaVantageService, AlphaVantageService>();
 builder.Services.AddScoped<ITickerService, TickerService>();
 builder.Services.AddScoped<IFinraService, FinraService>();
 
 // Register CQRS handlers
 builder.Services.AddScoped<StockDataApi.Handlers.Queries.GetAllStockDataQueryHandler>();
 builder.Services.AddScoped<StockDataApi.Handlers.Commands.FetchChartExchangeDataCommandHandler>();
-
-// Configure Alpha Vantage options
-builder.Services.Configure<AlphaVantageOptions>(
-    builder.Configuration.GetSection("AlphaVantage"));
 
 // Configure FINRA options
 builder.Services.Configure<FinraOptions>(
@@ -130,7 +125,6 @@ Console.WriteLine();
 Console.WriteLine("📄 APPSETTINGS.JSON CONFIGURATION:");
 DisplayConfigurationSection(builder.Configuration, "Logging");
 DisplayConfigurationSection(builder.Configuration, "AllowedHosts");
-DisplayConfigurationSection(builder.Configuration, "AlphaVantage");
 DisplayConfigurationSection(builder.Configuration, "Finra");
 Console.WriteLine();
 
@@ -173,7 +167,6 @@ Console.WriteLine("  ✅ HTTP Client Factory");
 Console.WriteLine("  ✅ Memory Cache");
 Console.WriteLine("  ✅ CORS (permissive)");
 Console.WriteLine("  ✅ Chart Exchange Service");
-Console.WriteLine("  ✅ Alpha Vantage Service");
 Console.WriteLine("  ✅ Ticker Service");
 Console.WriteLine("  ✅ FINRA Service");
 Console.WriteLine("  ✅ Swagger/OpenAPI");
@@ -327,7 +320,6 @@ static void DisplayEnvironmentVariables()
         "ASPNETCORE_URLS",
         "DOTNET_ENVIRONMENT",
         "ConnectionStrings__DefaultConnection",
-        "AlphaVantage__ApiKey",
         "Finra__ApiKey",
         "ASPNETCORE_ENVIRONMENT",
         "ASPNETCORE_CONTENTROOT",

@@ -9,8 +9,7 @@ function App() {
   const [selectedTicker, setSelectedTicker] = useState('');
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
   const [isFetchingBlocks, setIsFetchingBlocks] = useState(false);
-  const [isFetchingPolygon, setIsFetchingPolygon] = useState(false);
-  const [isFetchingAllPolygon, setIsFetchingAllPolygon] = useState(false);
+  const [isFetchingChartExchange, setIsFetchingChartExchange] = useState(false);
 
   const handleTickerSelect = (ticker: string) => {
     setSelectedTicker(ticker);
@@ -43,7 +42,7 @@ function App() {
   const handleFetchBlocksSummary = async () => {
     setIsFetchingBlocks(true);
     try {
-      const response = await fetch('/api/Finra/blocks-summary', {
+      const response = await fetch('/api/Finra/blocks-summary/fetch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,16 +63,16 @@ function App() {
     }
   };
 
-  const handleFetchPolygonData = async () => {
+  const handleFetchChartExchangeData = async () => {
     if (!selectedTicker) {
       console.error('Please select a ticker first');
       return;
     }
 
-    setIsFetchingPolygon(true);
+    setIsFetchingChartExchange(true);
     try {
       const response = await fetch(
-        `/api/Polygon/${selectedTicker}/fetch?years=2`,
+        `/api/StockData/${selectedTicker}/fetch-chartexchange`,
         {
           method: 'POST',
           headers: {
@@ -85,39 +84,7 @@ function App() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log(`Successfully fetched ${result.count} new Polygon data points (2 years) for ${selectedTicker}!`);
-      } else {
-        console.error(result.message || 'Failed to fetch Polygon data');
-      }
-    } catch (err) {
-      console.error('Error fetching Polygon data: ' + (err as Error).message);
-    } finally {
-      setIsFetchingPolygon(false);
-    }
-  };
-
-  const handleFetchAllPolygonData = async () => {
-    if (!selectedTicker) {
-      console.error('Please select a ticker first');
-      return;
-    }
-
-    setIsFetchingAllPolygon(true);
-    try {
-      const response = await fetch(
-        `/api/StockData/${selectedTicker}/fetch-polygon`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        let message = `Polygon data for ${selectedTicker}: `;
+        let message = `ChartExchange data for ${selectedTicker}: `;
         const parts = [];
 
         if (result.prices.skipped) {
@@ -126,27 +93,39 @@ function App() {
           parts.push(`Prices (${result.prices.fetched} records)`);
         }
 
-        if (result.shortInterest.skipped) {
-          parts.push(`Short Interest (skipped - data exists)`);
+        if (result.failureToDeliver.skipped) {
+          parts.push(`Failure to Deliver (skipped - data exists)`);
         } else {
-          parts.push(`Short Interest (${result.shortInterest.fetched} records)`);
+          parts.push(`Failure to Deliver (${result.failureToDeliver.fetched} records)`);
         }
 
-        if (result.shortVolume.skipped) {
-          parts.push(`Short Volume (skipped - data exists)`);
+        if (result.redditMentions.skipped) {
+          parts.push(`Reddit Mentions (skipped - data exists)`);
         } else {
-          parts.push(`Short Volume (${result.shortVolume.fetched} records)`);
+          parts.push(`Reddit Mentions (${result.redditMentions.fetched} records)`);
+        }
+
+        if (result.optionChain.skipped) {
+          parts.push(`Option Chain (skipped - data exists)`);
+        } else {
+          parts.push(`Option Chain (${result.optionChain.fetched} records)`);
+        }
+
+        if (result.stockSplits.skipped) {
+          parts.push(`Stock Splits (skipped - data exists)`);
+        } else {
+          parts.push(`Stock Splits (${result.stockSplits.fetched} records)`);
         }
 
         message += parts.join(', ');
         console.log(message);
       } else {
-        console.error(result.error || 'Failed to fetch Polygon data');
+        console.error(result.error || 'Failed to fetch ChartExchange data');
       }
     } catch (err) {
-      console.error('Error fetching Polygon data: ' + (err as Error).message);
+      console.error('Error fetching ChartExchange data: ' + (err as Error).message);
     } finally {
-      setIsFetchingAllPolygon(false);
+      setIsFetchingChartExchange(false);
     }
   };
 
@@ -156,12 +135,10 @@ function App() {
         <TopNavigation
           selectedTicker={selectedTicker}
           onTickerSelect={handleTickerSelect}
-          onFetchPolygonData={handleFetchPolygonData}
-          onFetchAllPolygonData={handleFetchAllPolygonData}
+          onFetchChartExchangeData={handleFetchChartExchangeData}
           onRefreshAllTickers={handleRefreshAllTickers}
           onFetchBlocksSummary={handleFetchBlocksSummary}
-          isFetchingPolygon={isFetchingPolygon}
-          isFetchingAllPolygon={isFetchingAllPolygon}
+          isFetchingChartExchange={isFetchingChartExchange}
           isRefreshingAll={isRefreshingAll}
           isFetchingBlocks={isFetchingBlocks}
         />
