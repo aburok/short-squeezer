@@ -304,11 +304,6 @@ const Dashboard = () => {
   return (
     <Container fluid className="py-3">
       {/* Controls Section */}
-      <Card className="mb-4">
-        <Card.Header>
-          <h4 className="mb-0">Stock Data Dashboard</h4>
-        </Card.Header>
-        <Card.Body>
           {/* Top Row: Ticker Search + Recently Viewed + Actions */}
           <Row className="mb-3">
             <Col md={3}>
@@ -406,8 +401,6 @@ const Dashboard = () => {
               <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
             </Col>
           </Row>
-        </Card.Body>
-      </Card>
 
       {/* Error Alert */}
       {error && (
