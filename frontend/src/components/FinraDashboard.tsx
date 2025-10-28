@@ -107,14 +107,14 @@ const FinraDashboard: React.FC<FinraDashboardProps> = ({
             </Card>
 
             {/* Charts */}
-            {symbol && (
+            {selectedTicker && (
                 <Card className="mb-4">
                     <Card.Header>
-                        <h5 className="mb-0">FINRA Short Interest Data - {symbol}</h5>
+                        <h5 className="mb-0">FINRA Short Interest Data - {selectedTicker}</h5>
                     </Card.Header>
                     <Card.Body>
                         <FinraShortInterestChart
-                            symbol={symbol}
+                            symbol={selectedTicker}
                             startDate={startDate ? startDate.toISOString().split('T')[0] : undefined}
                             endDate={endDate ? endDate.toISOString().split('T')[0] : undefined}
                         />

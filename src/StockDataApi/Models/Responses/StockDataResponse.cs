@@ -31,6 +31,8 @@ namespace StockDataApi.Models.Responses
         public ChartExchangeRedditMentionsDataDto[] RedditMentionsData { get; set; } = Array.Empty<ChartExchangeRedditMentionsDataDto>();
         public ChartExchangeOptionChainDataDto[] OptionChainData { get; set; } = Array.Empty<ChartExchangeOptionChainDataDto>();
         public ChartExchangeStockSplitDataDto[] StockSplitData { get; set; } = Array.Empty<ChartExchangeStockSplitDataDto>();
+        public ChartExchangeShortInterestDataDto[] ShortInterestData { get; set; } = Array.Empty<ChartExchangeShortInterestDataDto>();
+        public ChartExchangeShortVolumeDataDto[] ShortVolumeData { get; set; } = Array.Empty<ChartExchangeShortVolumeDataDto>();
     }
 
     public class ChartExchangePriceDataDto
@@ -99,6 +101,23 @@ namespace StockDataApi.Models.Responses
         public DateTime? PayableDate { get; set; }
         public DateTime? AnnouncementDate { get; set; }
         public string? CompanyName { get; set; }
+    }
+
+    public class ChartExchangeShortInterestDataDto
+    {
+        public DateTime Date { get; set; }
+        public long ShortInterest { get; set; }
+        public long SharesShort { get; set; }
+        public decimal ShortInterestPercent { get; set; }
+        public DateTime? SettlementDate { get; set; }
+    }
+
+    public class ChartExchangeShortVolumeDataDto
+    {
+        public DateTime Date { get; set; }
+        public long ShortVolume { get; set; }
+        public long TotalVolume { get; set; }
+        public decimal ShortVolumePercent { get; set; }
     }
 
     public class FinraDataDto

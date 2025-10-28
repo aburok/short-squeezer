@@ -144,7 +144,7 @@ function App() {
         />
 
         <Routes>
-          <Route path="/" element={<Dashboard selectedTicker={selectedTicker} onTickerSelect={handleTickerSelect} />} />
+          <Route path="/" element={<Dashboard selectedTicker={selectedTicker} />} />
           <Route path="/finra" element={<FinraDashboard selectedTicker={selectedTicker} onTickerSelect={handleTickerSelect} />} />
         </Routes>
       </div>

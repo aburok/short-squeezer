@@ -25,6 +25,8 @@ namespace StockDataLib.Data
         public DbSet<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
         public DbSet<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
         public DbSet<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
+        public DbSet<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
+        public DbSet<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

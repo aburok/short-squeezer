@@ -413,4 +413,27 @@ namespace StockDataLib.Models
         public decimal? SplitCoefficient { get; set; }
         public string? ChartExchangeRequestId { get; set; }
     }
+
+    /// <summary>
+    /// Represents ChartExchange Short Interest data stored in the database
+    /// </summary>
+    public class ChartExchangeShortInterest : StockDataPoint
+    {
+        public long ShortInterest { get; set; }
+        public long SharesShort { get; set; }
+        public decimal ShortInterestPercent { get; set; }
+        public DateTime? SettlementDate { get; set; }
+        public string? ChartExchangeRequestId { get; set; }
+    }
+
+    /// <summary>
+    /// Represents ChartExchange Short Volume data stored in the database
+    /// </summary>
+    public class ChartExchangeShortVolume : StockDataPoint
+    {
+        public long ShortVolume { get; set; }
+        public long TotalVolume { get; set; }
+        public decimal ShortVolumePercent { get; set; }
+        public string? ChartExchangeRequestId { get; set; }
+    }
 }

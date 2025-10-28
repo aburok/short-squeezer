@@ -213,6 +213,39 @@ namespace StockDataApi.Handlers.Queries
                 })
                 .ToArrayAsync(cancellationToken);
 
+            // Short interest data
+            var shortInterestQuery = _context.ChartExchangeShortInterest.Where(d => d.StockTickerSymbol == symbol);
+            if (startDate.HasValue) shortInterestQuery = shortInterestQuery.Where(d => d.Date >= startDate.Value.Date);
+            if (endDate.HasValue) shortInterestQuery = shortInterestQuery.Where(d => d.Date <= endDate.Value.Date);
+
+            chartExchangeData.ShortInterestData = await shortInterestQuery
+                .OrderBy(d => d.Date)
+                .Select(d => new ChartExchangeShortInterestDataDto
+                {
+                    Date = d.Date,
+                    ShortInterest = d.ShortInterest,
+                    SharesShort = d.SharesShort,
+                    ShortInterestPercent = d.ShortInterestPercent,
+                    SettlementDate = d.SettlementDate
+                })
+                .ToArrayAsync(cancellationToken);
+
+            // Short volume data
+            var shortVolumeQuery = _context.ChartExchangeShortVolume.Where(d => d.StockTickerSymbol == symbol);
+            if (startDate.HasValue) shortVolumeQuery = shortVolumeQuery.Where(d => d.Date >= startDate.Value.Date);
+            if (endDate.HasValue) shortVolumeQuery = shortVolumeQuery.Where(d => d.Date <= endDate.Value.Date);
+
+            chartExchangeData.ShortVolumeData = await shortVolumeQuery
+                .OrderBy(d => d.Date)
+                .Select(d => new ChartExchangeShortVolumeDataDto
+                {
+                    Date = d.Date,
+                    ShortVolume = d.ShortVolume,
+                    TotalVolume = d.TotalVolume,
+                    ShortVolumePercent = d.ShortVolumePercent
+                })
+                .ToArrayAsync(cancellationToken);
+
             return chartExchangeData;
         }
 

@@ -29,6 +29,8 @@ namespace StockDataLib.Models
         public ICollection<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
         public ICollection<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
         public ICollection<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
+        public ICollection<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
+        public ICollection<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
     }
 
     /// <summary>
