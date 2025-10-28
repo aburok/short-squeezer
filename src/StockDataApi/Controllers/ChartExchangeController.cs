@@ -290,14 +290,14 @@ namespace StockDataApi.Controllers
                     return NotFound($"Ticker {symbol} not found");
                 }
 
-                var data = await _context.ShortInterestData
+                var data = await _context.ChartExchangeShortInterest
                     .Where(d => d.StockTickerSymbol == symbol)
                     .OrderBy(d => d.Date)
                     .Select(d => new ShortInterestDataDto
                     {
                         Date = d.Date,
-                        ShortInterest = d.ShortInterest,
-                        SharesShort = d.SharesShort
+                        ShortInterest = d.ShortInterestPercent,
+                        SharesShort = d.ShortPosition
                     })
                     .ToListAsync();
 
@@ -341,13 +341,13 @@ namespace StockDataApi.Controllers
                     return NotFound($"Ticker {symbol} not found");
                 }
 
-                var data = await _context.ShortVolumeData
+                var data = await _context.ChartExchangeShortVolume
                     .Where(d => d.StockTickerSymbol == symbol)
                     .OrderBy(d => d.Date)
                     .Select(d => new ShortVolumeDataDto
                     {
                         Date = d.Date,
-                        ShortVolume = d.ShortVolume,
+                        ShortVolume = d.Rt,
                         ShortVolumePercent = d.ShortVolumePercent
                     })
                     .ToListAsync();

@@ -10,12 +10,6 @@ namespace StockDataLib.Data
         }
 
         public DbSet<StockTicker> StockTickers { get; set; }
-        public DbSet<PriceData> PriceData { get; set; }
-        public DbSet<VolumeData> VolumeData { get; set; }
-        public DbSet<ShortVolumeData> ShortVolumeData { get; set; }
-        public DbSet<ShortPositionData> ShortPositionData { get; set; }
-        public DbSet<ShortInterestData> ShortInterestData { get; set; }
-        public DbSet<RedditMentionData> RedditMentionData { get; set; }
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
 
         // ChartExchange data sets
@@ -75,7 +69,6 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<ShortVolumeData>(modelBuilder);
             ConfigureStockDataPoint<ShortPositionData>(modelBuilder);
             ConfigureStockDataPoint<ShortInterestData>(modelBuilder);
-            ConfigureStockDataPoint<BorrowFeeData>(modelBuilder);
             ConfigureStockDataPoint<RedditMentionData>(modelBuilder);
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
 
