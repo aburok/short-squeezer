@@ -6,10 +6,13 @@ import FinraShortInterestChart from './FinraShortInterestChart';
 import MovableDateRangePicker from './MovableDateRangePicker';
 import ShortInterestChart from './ShortInterestChart';
 import ShortVolumeChart from './ShortVolumeChart';
-import TickerSearch from './TickerSearch';
 
-const Dashboard = () => {
-  const [selectedTicker, setSelectedTicker] = useState('');
+interface DashboardProps {
+  selectedTicker: string;
+  onTickerSelect: (ticker: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ selectedTicker, onTickerSelect }) => {
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     endDate: new Date()
@@ -25,22 +28,10 @@ const Dashboard = () => {
   const [isFetchingBlocks, setIsFetchingBlocks] = useState(false);
   const [isFetchingPolygon, setIsFetchingPolygon] = useState(false);
   const [isFetchingAllPolygon, setIsFetchingAllPolygon] = useState(false);
-  const [recentlyViewedTickers, setRecentlyViewedTickers] = useState<string[]>([]);
 
   const handleTickerSelect = (ticker: string) => {
-    setSelectedTicker(ticker);
+    onTickerSelect(ticker);
     setError('');
-
-    // Track recently viewed tickers
-    if (ticker) {
-      setRecentlyViewedTickers(prev => {
-        const filtered = prev.filter(t => t !== ticker);
-        const updated = [ticker, ...filtered].slice(0, 10); // Keep only last 10
-        // Save to localStorage
-        localStorage.setItem('recentlyViewedTickers', JSON.stringify(updated));
-        return updated;
-      });
-    }
   };
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
@@ -288,50 +279,12 @@ const Dashboard = () => {
     fetchData();
   }, [selectedTicker, dateRange]);
 
-  // Load recently viewed tickers from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('recentlyViewedTickers');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setRecentlyViewedTickers(Array.isArray(parsed) ? parsed : []);
-      } catch (e) {
-        console.error('Error loading recently viewed tickers:', e);
-      }
-    }
-  }, []);
-
   return (
     <Container fluid className="py-3">
       {/* Controls Section */}
-          {/* Top Row: Ticker Search + Recently Viewed + Actions */}
+          {/* Actions Row */}
           <Row className="mb-3">
-            <Col md={3}>
-              <TickerSearch onTickerSelect={handleTickerSelect} />
-            </Col>
-
-            <Col md={5}>
-              {recentlyViewedTickers.length > 0 && (
-                <div className="d-flex align-items-center">
-                  <span className="me-2 text-muted">Recently Viewed:</span>
-                  <div className="d-flex flex-wrap gap-1">
-                    {recentlyViewedTickers.map((ticker, index) => (
-                      <Button
-                        key={index}
-                        variant={selectedTicker === ticker ? "primary" : "outline-secondary"}
-                        size="sm"
-                        onClick={() => handleTickerSelect(ticker)}
-                        className="me-1"
-                      >
-                        {ticker}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Col>
-
-            <Col md={4}>
+            <Col md={12} className="d-flex justify-content-end">
               <Dropdown>
                 <Dropdown.Toggle variant="primary" id="actions-dropdown">
                   Actions

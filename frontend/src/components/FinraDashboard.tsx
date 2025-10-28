@@ -5,19 +5,20 @@ import FinraShortInterestChart from './FinraShortInterestChart';
 import MovableDateRangePicker from './MovableDateRangePicker';
 
 interface FinraDashboardProps {
-    defaultSymbol?: string;
+    selectedTicker: string;
+    onTickerSelect: (ticker: string) => void;
 }
 
 const FinraDashboard: React.FC<FinraDashboardProps> = ({
-    defaultSymbol = 'AAPL'
+    selectedTicker,
+    onTickerSelect
 }) => {
-    const [symbol, setSymbol] = useState(defaultSymbol);
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSymbolChange = (newSymbol: string) => {
-        setSymbol(newSymbol.toUpperCase());
+        onTickerSelect(newSymbol.toUpperCase());
     };
 
     const handleDateRangeChange = (start: Date, end: Date) => {
@@ -50,7 +51,7 @@ const FinraDashboard: React.FC<FinraDashboardProps> = ({
                                 <Form.Label>Stock Symbol</Form.Label>
                                 <Form.Control
                                     type="text"
-                                    value={symbol}
+                                    value={selectedTicker}
                                     onChange={(e) => handleSymbolChange(e.target.value)}
                                     placeholder="Enter symbol (e.g., AAPL)"
                                     className="text-uppercase"
@@ -92,8 +93,8 @@ const FinraDashboard: React.FC<FinraDashboardProps> = ({
                                 {popularSymbols.map((sym) => (
                                     <Button
                                         key={sym}
-                                        variant={symbol === sym ? "primary" : "outline-secondary"}
-                                        onClick={() => setSymbol(sym)}
+                                        variant={selectedTicker === sym ? "primary" : "outline-secondary"}
+                                        onClick={() => onTickerSelect(sym)}
                                         className="me-1 mb-1"
                                     >
                                         {sym}
