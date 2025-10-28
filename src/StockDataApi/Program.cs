@@ -6,6 +6,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using StockDataLib;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 var configBuilder = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", true, true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", true, true)
     .AddEnvironmentVariables()
     .AddCommandLine(args)
     .Build();
@@ -49,8 +52,37 @@ builder.Services.AddDbContext<StockDataContext>(options =>
 // Add HTTP client factory
 builder.Services.AddHttpClient();
 
-// Add HTTP client for ChartExchange
-builder.Services.AddHttpClient("ChartExchange");
+// Add HTTP client for ChartExchange with SSL certificate handling
+builder.Services.AddHttpClient("ChartExchange", client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
+})
+.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+{
+    var handler = new HttpClientHandler();
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var chartExchangeOptions = configuration.GetSection("ChartExchange").Get<ChartExchangeOptions>();
+
+    // Check if SSL errors should be ignored (from configuration)
+    if (chartExchangeOptions?.IgnoreSslErrors == true || builder.Environment.IsDevelopment())
+    {
+        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+        {
+            // Log the certificate issue for debugging
+            Console.WriteLine($"SSL Certificate validation failed: {errors}");
+            Console.WriteLine($"Certificate subject: {cert?.Subject}");
+            Console.WriteLine($"Certificate issuer: {cert?.Issuer}");
+            Console.WriteLine($"Request URI: {message.RequestUri}");
+
+            // Allow invalid certificates when configured to do so
+            return true;
+        };
+
+        Console.WriteLine("⚠️  WARNING: SSL certificate validation is disabled for ChartExchange API");
+    }
+
+    return handler;
+});
 
 // Add memory cache
 builder.Services.AddMemoryCache();

@@ -47,9 +47,6 @@ namespace StockDataApi.Controllers
                 var query = new GetAllStockDataQuery
                 {
                     Symbol = symbol,
-                    StartDate = null, // No date filtering - return all data
-                    EndDate = null,   // No date filtering - return all data
-                    IncludeBorrowFee = includeBorrowFee,
                     IncludeChartExchange = includeChartExchange,
                     IncludeFinra = includeFinra
                 };
@@ -82,11 +79,12 @@ namespace StockDataApi.Controllers
                     {
                         success = true,
                         symbol = result.Symbol,
-                        prices = result.Prices,
                         failureToDeliver = result.FailureToDeliver,
                         redditMentions = result.RedditMentions,
                         optionChain = result.OptionChain,
-                        stockSplits = result.StockSplits
+                        stockSplits = result.StockSplits,
+                        shortInterest = result.ShortInterest,
+                        shortVolume = result.ShortVolume
                     });
                 }
                 else

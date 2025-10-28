@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockDataLib.Data;
 
@@ -11,9 +12,11 @@ using StockDataLib.Data;
 namespace StockDataLib.Migrations
 {
     [DbContext(typeof(StockDataContext))]
-    partial class StockDataContextModelSnapshot : ModelSnapshot
+    [Migration("20251028165937_UpdateChartExchangeServiceRefactoring")]
+    partial class UpdateChartExchangeServiceRefactoring
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -224,23 +227,20 @@ namespace StockDataLib.Migrations
                     b.Property<string>("ChartExchangeRequestId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("ChangePercent")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<long>("ChangeNumber")
-                        .HasColumnType("bigint");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("DaysToCover")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateTime?>("SettlementDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("SharesShort")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ShortInterest")
+                        .HasColumnType("bigint");
 
                     b.Property<decimal>("ShortInterestPercent")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<long>("ShortPosition")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("StockTickerSymbol")
                         .IsRequired()
@@ -261,65 +261,23 @@ namespace StockDataLib.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("Arcx")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Bats")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Baty")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("ChartExchangeRequestId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<long>("Edga")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Edgx")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Fs")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Fse")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Lt")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Rt")
+                    b.Property<long>("ShortVolume")
                         .HasColumnType("bigint");
 
                     b.Property<decimal>("ShortVolumePercent")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<long>("St")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("StockTickerSymbol")
                         .IsRequired()
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<long>("Xase")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Xchi")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Xcis")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Xnas")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Xphl")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Xnys")
+                    b.Property<long>("TotalVolume")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
@@ -327,43 +285,6 @@ namespace StockDataLib.Migrations
                     b.HasIndex("StockTickerSymbol");
 
                     b.ToTable("ChartExchangeShortVolume");
-                });
-
-            modelBuilder.Entity("StockDataLib.Models.ChartExchangeBorrowFee", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("Available")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ChartExchangeRequestId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Fee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Rebate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("StockTickerSymbol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StockTickerSymbol");
-
-                    b.HasIndex("StockTickerSymbol", "Date")
-                        .IsUnique();
-
-                    b.ToTable("ChartExchangeBorrowFee");
                 });
 
             modelBuilder.Entity("StockDataLib.Models.ChartExchangeStockSplit", b =>
@@ -739,17 +660,6 @@ namespace StockDataLib.Migrations
                     b.Navigation("StockTicker");
                 });
 
-            modelBuilder.Entity("StockDataLib.Models.ChartExchangeBorrowFee", b =>
-                {
-                    b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
-                        .WithMany("ChartExchangeBorrowFee")
-                        .HasForeignKey("StockTickerSymbol")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StockTicker");
-                });
-
             modelBuilder.Entity("StockDataLib.Models.ChartExchangeStockSplit", b =>
                 {
                     b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
@@ -849,8 +759,6 @@ namespace StockDataLib.Migrations
                     b.Navigation("ChartExchangeShortInterest");
 
                     b.Navigation("ChartExchangeShortVolume");
-
-                    b.Navigation("ChartExchangeBorrowFee");
 
                     b.Navigation("ChartExchangeStockSplit");
 

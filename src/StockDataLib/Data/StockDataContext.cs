@@ -20,13 +20,13 @@ namespace StockDataLib.Data
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
 
         // ChartExchange data sets
-        public DbSet<ChartExchangePrice> ChartExchangePrice { get; set; }
         public DbSet<ChartExchangeFailureToDeliver> ChartExchangeFailureToDeliver { get; set; }
         public DbSet<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
         public DbSet<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
         public DbSet<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
         public DbSet<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
         public DbSet<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
+        public DbSet<ChartExchangeBorrowFee> ChartExchangeBorrowFee { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,11 +81,13 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
 
             // Configure ChartExchange data points
-            ConfigureStockDataPoint<ChartExchangePrice>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeFailureToDeliver>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeRedditMentions>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeOptionChain>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeStockSplit>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeShortInterest>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeShortVolume>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeBorrowFee>(modelBuilder);
 
             // Configure specific navigation properties
             modelBuilder.Entity<StockTicker>()
@@ -99,38 +101,12 @@ namespace StockDataLib.Data
                 .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.ShortVolumeData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.ShortPositionData)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.ShortInterestData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.BorrowFeeData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.RedditMentionData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.FinraShortInterestData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
-
-            // ChartExchange navigation properties
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.ChartExchangePrice)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
 
@@ -151,6 +127,21 @@ namespace StockDataLib.Data
 
             modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.ChartExchangeStockSplit)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.ChartExchangeShortInterest)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.ChartExchangeShortVolume)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.ChartExchangeBorrowFee)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
         }

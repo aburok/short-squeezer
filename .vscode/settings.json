@@ -16,15 +16,13 @@
     "csharp.format.enable": true,
     "csharp.format.organizeImports": true,
     "csharp.semanticHighlighting.enabled": true,
-    "csharp.inlayHints.parameters.enabled": true,
-    "csharp.inlayHints.types.enabled": true,
     "typescript.preferences.importModuleSpecifier": "relative",
     "typescript.suggest.autoImports": true,
     "typescript.updateImportsOnFileMove.enabled": "always",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.organizeImports": true,
-        "source.fixAll": true
+        "source.organizeImports": "explicit",
+        "source.fixAll": "explicit"
     },
     "emmet.includeLanguages": {
         "typescript": "html",
@@ -38,7 +36,6 @@
     "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
     "dotnet.server.useOmnisharp": false,
     "omnisharp.enableEditorConfigSupport": true,
-    "omnisharp.enableImportCompletion": true,
     "omnisharp.enableRoslynAnalyzers": true,
     "eslint.workingDirectories": [
         "frontend"
@@ -241,5 +238,7 @@
         "ms-vscode.vscode-json",
         "redhat.vscode-yaml",
         "ms-azuretools.vscode-docker"
-    ]
+    ],
+    "dotnet.inlayHints.enableInlayHintsForParameters": true,
+    "csharp.inlayHints.enableInlayHintsForTypes": true
 }

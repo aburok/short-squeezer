@@ -16,21 +16,16 @@ namespace StockDataLib.Models
         // Navigation properties
         public ICollection<PriceData> PriceData { get; set; }
         public ICollection<VolumeData> VolumeData { get; set; }
-        public ICollection<ShortVolumeData> ShortVolumeData { get; set; }
         public ICollection<ShortPositionData> ShortPositionData { get; set; }
-        public ICollection<ShortInterestData> ShortInterestData { get; set; }
-        public ICollection<BorrowFeeData> BorrowFeeData { get; set; }
-        public ICollection<RedditMentionData> RedditMentionData { get; set; }
         public ICollection<FinraShortInterestData> FinraShortInterestData { get; set; }
 
-        // ChartExchange navigation properties
-        public ICollection<ChartExchangePrice> ChartExchangePrice { get; set; }
         public ICollection<ChartExchangeFailureToDeliver> ChartExchangeFailureToDeliver { get; set; }
         public ICollection<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
         public ICollection<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
         public ICollection<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
         public ICollection<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
         public ICollection<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
+        public ICollection<ChartExchangeBorrowFee> ChartExchangeBorrowFee { get; set; }
     }
 
     /// <summary>

@@ -212,3 +212,4 @@ const RedditMentionsChart: React.FC<RedditMentionsChartProps> = ({
 };
 
 export default RedditMentionsChart;
+

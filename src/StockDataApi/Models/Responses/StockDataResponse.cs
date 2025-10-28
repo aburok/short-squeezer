@@ -26,26 +26,13 @@ namespace StockDataApi.Models.Responses
 
     public class ChartExchangeDataDto
     {
-        public ChartExchangePriceDataDto[] PriceData { get; set; } = Array.Empty<ChartExchangePriceDataDto>();
         public ChartExchangeFailureToDeliverDataDto[] FailureToDeliverData { get; set; } = Array.Empty<ChartExchangeFailureToDeliverDataDto>();
         public ChartExchangeRedditMentionsDataDto[] RedditMentionsData { get; set; } = Array.Empty<ChartExchangeRedditMentionsDataDto>();
         public ChartExchangeOptionChainDataDto[] OptionChainData { get; set; } = Array.Empty<ChartExchangeOptionChainDataDto>();
         public ChartExchangeStockSplitDataDto[] StockSplitData { get; set; } = Array.Empty<ChartExchangeStockSplitDataDto>();
         public ChartExchangeShortInterestDataDto[] ShortInterestData { get; set; } = Array.Empty<ChartExchangeShortInterestDataDto>();
         public ChartExchangeShortVolumeDataDto[] ShortVolumeData { get; set; } = Array.Empty<ChartExchangeShortVolumeDataDto>();
-    }
-
-    public class ChartExchangePriceDataDto
-    {
-        public DateTime Date { get; set; }
-        public decimal Open { get; set; }
-        public decimal High { get; set; }
-        public decimal Low { get; set; }
-        public decimal Close { get; set; }
-        public long Volume { get; set; }
-        public decimal? AdjustedClose { get; set; }
-        public decimal? DividendAmount { get; set; }
-        public decimal? SplitCoefficient { get; set; }
+        public ChartExchangeBorrowFeeDataDto[] BorrowFeeData { get; set; } = Array.Empty<ChartExchangeBorrowFeeDataDto>();
     }
 
     public class ChartExchangeFailureToDeliverDataDto
@@ -106,18 +93,47 @@ namespace StockDataApi.Models.Responses
     public class ChartExchangeShortInterestDataDto
     {
         public DateTime Date { get; set; }
-        public long ShortInterest { get; set; }
-        public long SharesShort { get; set; }
-        public decimal ShortInterestPercent { get; set; }
-        public DateTime? SettlementDate { get; set; }
+        public decimal ShortInterestPercent { get; set; } // Parsed from short_interest string
+        public long ShortPosition { get; set; } // Number of shares short
+        public decimal DaysToCover { get; set; } // Parsed from days_to_cover string
+        public long ChangeNumber { get; set; } // Change in number of shares
+        public decimal ChangePercent { get; set; } // Parsed from change_percent string
     }
 
     public class ChartExchangeShortVolumeDataDto
     {
         public DateTime Date { get; set; }
-        public long ShortVolume { get; set; }
-        public long TotalVolume { get; set; }
+
+        // Core volume fields
+        public long Rt { get; set; } // Total volume
+        public long St { get; set; } // Short volume
+        public long Lt { get; set; } // Long volume
+        public long Fs { get; set; } // Fail to deliver
+        public long Fse { get; set; } // Fail to deliver exempt
+
+        // Exchange-specific volume fields
+        public long Xnas { get; set; } // NASDAQ volume
+        public long Xphl { get; set; } // Philadelphia volume
+        public long Xnys { get; set; } // NYSE volume
+        public long Arcx { get; set; } // ARCA volume
+        public long Xcis { get; set; } // CBOE volume
+        public long Xase { get; set; } // AMEX volume
+        public long Xchi { get; set; } // Chicago volume
+        public long Edgx { get; set; } // EDGX volume
+        public long Bats { get; set; } // BATS volume
+        public long Edga { get; set; } // EDGA volume
+        public long Baty { get; set; } // BATY volume
+
+        // Calculated fields
         public decimal ShortVolumePercent { get; set; }
+    }
+
+    public class ChartExchangeBorrowFeeDataDto
+    {
+        public DateTime Date { get; set; }
+        public long Available { get; set; } // Available shares
+        public decimal Fee { get; set; } // Parsed from fee string
+        public decimal Rebate { get; set; } // Parsed from rebate string
     }
 
     public class FinraDataDto

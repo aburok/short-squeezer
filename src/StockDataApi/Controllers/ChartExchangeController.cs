@@ -34,63 +34,6 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
-        /// Gets all ChartExchange price data for a specific ticker
-        /// </summary>
-        /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
-        /// <returns>A list of all ChartExchange price data points</returns>
-        [HttpGet("price/{symbol}")]
-        public async Task<ActionResult<IEnumerable<ChartExchangePriceDto>>> GetPriceData(string symbol)
-        {
-            try
-            {
-                symbol = symbol.ToUpper().Trim();
-                string cacheKey = $"ChartExchangePrice_{symbol}";
-
-                if (_cache.TryGetValue(cacheKey, out List<ChartExchangePriceDto> cachedData))
-                {
-                    _logger.LogInformation("Returning cached ChartExchange price data for {Symbol}", symbol);
-                    return cachedData;
-                }
-
-                var tickerExists = await _context.StockTickers.AnyAsync(t => t.Symbol == symbol);
-                if (!tickerExists)
-                {
-                    _logger.LogWarning("Ticker {Symbol} not found", symbol);
-                    return NotFound($"Ticker {symbol} not found");
-                }
-
-                var data = await _context.ChartExchangePrice
-                    .Where(d => d.StockTickerSymbol == symbol)
-                    .OrderBy(d => d.Date)
-                    .Select(d => new ChartExchangePriceDto
-                    {
-                        Date = d.Date,
-                        Open = d.Open,
-                        High = d.High,
-                        Low = d.Low,
-                        Close = d.Close,
-                        Volume = d.Volume,
-                        AdjustedClose = d.AdjustedClose,
-                        DividendAmount = d.DividendAmount,
-                        SplitCoefficient = d.SplitCoefficient
-                    })
-                    .ToListAsync();
-
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-                _cache.Set(cacheKey, data, cacheOptions);
-
-                _logger.LogInformation("Retrieved {Count} ChartExchange price data points for {Symbol}", data.Count, symbol);
-                return data;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving ChartExchange price data for {Symbol}", symbol);
-                return StatusCode(500, "An error occurred while retrieving the data");
-            }
-        }
-
-        /// <summary>
         /// Gets all ChartExchange failure to deliver data for a specific ticker
         /// </summary>
         /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
@@ -501,23 +444,6 @@ namespace StockDataApi.Controllers
 
                 int totalRecords = 0;
 
-                // Fetch and store price data
-                var priceData = await _chartExchangeService.GetPriceDataAsync(symbol, startDate, endDate);
-                if (priceData.Any())
-                {
-                    var existingDates = await _context.ChartExchangePrice
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync();
-
-                    var newPriceData = priceData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newPriceData.Any())
-                    {
-                        _context.ChartExchangePrice.AddRange(newPriceData);
-                        totalRecords += newPriceData.Count;
-                    }
-                }
-
                 // Fetch and store failure to deliver data
                 var failureToDeliverData = await _chartExchangeService.GetFailureToDeliverDataAsync(symbol, startDate, endDate);
                 if (failureToDeliverData.Any())
@@ -589,7 +515,6 @@ namespace StockDataApi.Controllers
                 await _context.SaveChangesAsync();
 
                 // Clear cache for this symbol
-                _cache.Remove($"ChartExchangePrice_{symbol}");
                 _cache.Remove($"ChartExchangeFailureToDeliver_{symbol}");
                 _cache.Remove($"ChartExchangeRedditMentions_{symbol}");
                 _cache.Remove($"ChartExchangeOptionChain_{symbol}");
@@ -615,20 +540,6 @@ namespace StockDataApi.Controllers
                 });
             }
         }
-    }
-
-    // DTOs for ChartExchange data
-    public class ChartExchangePriceDto
-    {
-        public DateTime Date { get; set; }
-        public decimal Open { get; set; }
-        public decimal High { get; set; }
-        public decimal Low { get; set; }
-        public decimal Close { get; set; }
-        public long Volume { get; set; }
-        public decimal? AdjustedClose { get; set; }
-        public decimal? DividendAmount { get; set; }
-        public decimal? SplitCoefficient { get; set; }
     }
 
     public class ChartExchangeFailureToDeliverDto

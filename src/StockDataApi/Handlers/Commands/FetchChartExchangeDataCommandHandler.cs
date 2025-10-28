@@ -56,33 +56,13 @@ namespace StockDataApi.Handlers.Commands
                 {
                     Success = true,
                     Symbol = symbol,
-                    Prices = new DataFetchResult(),
                     FailureToDeliver = new DataFetchResult(),
                     RedditMentions = new DataFetchResult(),
                     OptionChain = new DataFetchResult(),
-                    StockSplits = new DataFetchResult()
+                    StockSplits = new DataFetchResult(),
+                    ShortInterest = new DataFetchResult(),
+                    ShortVolume = new DataFetchResult()
                 };
-
-                // Fetch and store price data
-                var priceData = await _chartExchangeService.GetPriceDataAsync(symbol, startDate, endDate);
-                if (priceData.Any())
-                {
-                    var existingDates = await _context.ChartExchangePrice
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newPriceData = priceData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newPriceData.Any())
-                    {
-                        _context.ChartExchangePrice.AddRange(newPriceData);
-                        result.Prices.Fetched = newPriceData.Count;
-                    }
-                    else
-                    {
-                        result.Prices.Skipped = true;
-                    }
-                }
 
                 // Fetch and store failure to deliver data
                 var failureToDeliverData = await _chartExchangeService.GetFailureToDeliverDataAsync(symbol, startDate, endDate);
@@ -168,6 +148,48 @@ namespace StockDataApi.Handlers.Commands
                     }
                 }
 
+                // Fetch and store short interest data
+                var shortInterestData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
+                if (shortInterestData.Any())
+                {
+                    var existingDates = await _context.ChartExchangeShortInterest
+                        .Where(d => d.StockTickerSymbol == symbol)
+                        .Select(d => d.Date.Date)
+                        .ToListAsync(cancellationToken);
+
+                    var newShortInterestData = shortInterestData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
+                    if (newShortInterestData.Any())
+                    {
+                        _context.ChartExchangeShortInterest.AddRange(newShortInterestData);
+                        result.ShortInterest.Fetched = newShortInterestData.Count;
+                    }
+                    else
+                    {
+                        result.ShortInterest.Skipped = true;
+                    }
+                }
+
+                // Fetch and store short volume data
+                var shortVolumeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, startDate, endDate);
+                if (shortVolumeData.Any())
+                {
+                    var existingDates = await _context.ChartExchangeShortVolume
+                        .Where(d => d.StockTickerSymbol == symbol)
+                        .Select(d => d.Date.Date)
+                        .ToListAsync(cancellationToken);
+
+                    var newShortVolumeData = shortVolumeData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
+                    if (newShortVolumeData.Any())
+                    {
+                        _context.ChartExchangeShortVolume.AddRange(newShortVolumeData);
+                        result.ShortVolume.Fetched = newShortVolumeData.Count;
+                    }
+                    else
+                    {
+                        result.ShortVolume.Skipped = true;
+                    }
+                }
+
                 await _context.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation("Successfully fetched ChartExchange data for {Symbol}", symbol);
@@ -203,11 +225,12 @@ namespace StockDataApi.Handlers.Commands
         public bool Success { get; set; }
         public string Symbol { get; set; } = string.Empty;
         public string? ErrorMessage { get; set; }
-        public DataFetchResult Prices { get; set; } = new DataFetchResult();
         public DataFetchResult FailureToDeliver { get; set; } = new DataFetchResult();
         public DataFetchResult RedditMentions { get; set; } = new DataFetchResult();
         public DataFetchResult OptionChain { get; set; } = new DataFetchResult();
         public DataFetchResult StockSplits { get; set; } = new DataFetchResult();
+        public DataFetchResult ShortInterest { get; set; } = new DataFetchResult();
+        public DataFetchResult ShortVolume { get; set; } = new DataFetchResult();
     }
 
     /// <summary>

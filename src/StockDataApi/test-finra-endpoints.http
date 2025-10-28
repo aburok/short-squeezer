@@ -45,3 +45,4 @@ GET http://localhost:80/api/finra/short-interest/MSFT
 Accept: application/json
 
 ### FETCH DATA FROM FINRA
+

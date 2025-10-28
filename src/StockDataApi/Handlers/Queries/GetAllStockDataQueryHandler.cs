@@ -36,7 +36,7 @@ namespace StockDataApi.Handlers.Queries
             {
                 var symbol = query.Symbol.ToUpper().Trim();
 
-                var cacheKey = $"StockData_{symbol}_{query.StartDate}_{query.EndDate}_{query.IncludeBorrowFee}_{query.IncludeChartExchange}_{query.IncludeFinra}";
+                var cacheKey = $"StockData_{symbol}_{query.IncludeChartExchange}_{query.IncludeFinra}";
 
                 if (_cache.TryGetValue(cacheKey, out StockDataResponse cachedData))
                 {
@@ -46,22 +46,16 @@ namespace StockDataApi.Handlers.Queries
 
                 var response = new StockDataResponse { Symbol = symbol };
 
-                // Fetch borrow fee data
-                if (query.IncludeBorrowFee)
-                {
-                    response.BorrowFeeData = await GetBorrowFeeDataAsync(symbol, query.StartDate, query.EndDate, cancellationToken);
-                }
-
                 // Fetch ChartExchange data
                 if (query.IncludeChartExchange)
                 {
-                    response.ChartExchangeData = await GetChartExchangeDataAsync(symbol, query.StartDate, query.EndDate, cancellationToken);
+                    response.ChartExchangeData = await GetChartExchangeDataAsync(symbol, cancellationToken);
                 }
 
                 // Fetch FINRA data
                 if (query.IncludeFinra)
                 {
-                    response.FinraData = await GetFinraDataAsync(symbol, query.StartDate, query.EndDate, cancellationToken);
+                    response.FinraData = await GetFinraDataAsync(symbol, cancellationToken);
                 }
 
                 // Cache for 15 minutes
@@ -101,35 +95,12 @@ namespace StockDataApi.Handlers.Queries
                 .ToArrayAsync(cancellationToken);
         }
 
-        private async Task<ChartExchangeDataDto> GetChartExchangeDataAsync(string symbol, DateTime? startDate, DateTime? endDate, CancellationToken cancellationToken)
+        private async Task<ChartExchangeDataDto> GetChartExchangeDataAsync(string symbol, CancellationToken cancellationToken)
         {
             var chartExchangeData = new ChartExchangeDataDto();
 
-            // Price data
-            var priceQuery = _context.ChartExchangePrice.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) priceQuery = priceQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) priceQuery = priceQuery.Where(d => d.Date <= endDate.Value.Date);
-
-            chartExchangeData.PriceData = await priceQuery
-                .OrderBy(d => d.Date)
-                .Select(d => new ChartExchangePriceDataDto
-                {
-                    Date = d.Date,
-                    Open = d.Open,
-                    High = d.High,
-                    Low = d.Low,
-                    Close = d.Close,
-                    Volume = d.Volume,
-                    AdjustedClose = d.AdjustedClose,
-                    DividendAmount = d.DividendAmount,
-                    SplitCoefficient = d.SplitCoefficient
-                })
-                .ToArrayAsync(cancellationToken);
-
             // Failure to deliver data
             var failureToDeliverQuery = _context.ChartExchangeFailureToDeliver.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) failureToDeliverQuery = failureToDeliverQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) failureToDeliverQuery = failureToDeliverQuery.Where(d => d.Date <= endDate.Value.Date);
 
             chartExchangeData.FailureToDeliverData = await failureToDeliverQuery
                 .OrderBy(d => d.Date)
@@ -147,8 +118,6 @@ namespace StockDataApi.Handlers.Queries
 
             // Reddit mentions data
             var redditMentionsQuery = _context.ChartExchangeRedditMentions.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) redditMentionsQuery = redditMentionsQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) redditMentionsQuery = redditMentionsQuery.Where(d => d.Date <= endDate.Value.Date);
 
             chartExchangeData.RedditMentionsData = await redditMentionsQuery
                 .OrderBy(d => d.Date)
@@ -167,8 +136,6 @@ namespace StockDataApi.Handlers.Queries
 
             // Option chain data
             var optionChainQuery = _context.ChartExchangeOptionChain.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) optionChainQuery = optionChainQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) optionChainQuery = optionChainQuery.Where(d => d.Date <= endDate.Value.Date);
 
             chartExchangeData.OptionChainData = await optionChainQuery
                 .OrderBy(d => d.Date)
@@ -193,8 +160,6 @@ namespace StockDataApi.Handlers.Queries
 
             // Stock split data
             var stockSplitQuery = _context.ChartExchangeStockSplit.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) stockSplitQuery = stockSplitQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) stockSplitQuery = stockSplitQuery.Where(d => d.Date <= endDate.Value.Date);
 
             chartExchangeData.StockSplitData = await stockSplitQuery
                 .OrderBy(d => d.Date)
@@ -215,47 +180,70 @@ namespace StockDataApi.Handlers.Queries
 
             // Short interest data
             var shortInterestQuery = _context.ChartExchangeShortInterest.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) shortInterestQuery = shortInterestQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) shortInterestQuery = shortInterestQuery.Where(d => d.Date <= endDate.Value.Date);
 
             chartExchangeData.ShortInterestData = await shortInterestQuery
                 .OrderBy(d => d.Date)
                 .Select(d => new ChartExchangeShortInterestDataDto
                 {
                     Date = d.Date,
-                    ShortInterest = d.ShortInterest,
-                    SharesShort = d.SharesShort,
                     ShortInterestPercent = d.ShortInterestPercent,
-                    SettlementDate = d.SettlementDate
+                    ShortPosition = d.ShortPosition,
+                    DaysToCover = d.DaysToCover,
+                    ChangeNumber = d.ChangeNumber,
+                    ChangePercent = d.ChangePercent
                 })
                 .ToArrayAsync(cancellationToken);
 
             // Short volume data
             var shortVolumeQuery = _context.ChartExchangeShortVolume.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) shortVolumeQuery = shortVolumeQuery.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) shortVolumeQuery = shortVolumeQuery.Where(d => d.Date <= endDate.Value.Date);
 
             chartExchangeData.ShortVolumeData = await shortVolumeQuery
                 .OrderBy(d => d.Date)
                 .Select(d => new ChartExchangeShortVolumeDataDto
                 {
                     Date = d.Date,
-                    ShortVolume = d.ShortVolume,
-                    TotalVolume = d.TotalVolume,
+                    Rt = d.Rt,
+                    St = d.St,
+                    Lt = d.Lt,
+                    Fs = d.Fs,
+                    Fse = d.Fse,
+                    Xnas = d.Xnas,
+                    Xphl = d.Xphl,
+                    Xnys = d.Xnys,
+                    Arcx = d.Arcx,
+                    Xcis = d.Xcis,
+                    Xase = d.Xase,
+                    Xchi = d.Xchi,
+                    Edgx = d.Edgx,
+                    Bats = d.Bats,
+                    Edga = d.Edga,
+                    Baty = d.Baty,
                     ShortVolumePercent = d.ShortVolumePercent
+                })
+                .ToArrayAsync(cancellationToken);
+
+            // Borrow fee data
+            var borrowFeeQuery = _context.ChartExchangeBorrowFee.Where(d => d.StockTickerSymbol == symbol);
+
+            chartExchangeData.BorrowFeeData = await borrowFeeQuery
+                .OrderBy(d => d.Date)
+                .Select(d => new ChartExchangeBorrowFeeDataDto
+                {
+                    Date = d.Date,
+                    Available = d.Available,
+                    Fee = d.Fee,
+                    Rebate = d.Rebate
                 })
                 .ToArrayAsync(cancellationToken);
 
             return chartExchangeData;
         }
 
-        private async Task<FinraDataDto> GetFinraDataAsync(string symbol, DateTime? startDate, DateTime? endDate, CancellationToken cancellationToken)
+        private async Task<FinraDataDto> GetFinraDataAsync(string symbol, CancellationToken cancellationToken)
         {
             var finraData = new FinraDataDto();
 
             var query = _context.FinraShortInterestData.Where(d => d.StockTickerSymbol == symbol);
-            if (startDate.HasValue) query = query.Where(d => d.Date >= startDate.Value.Date);
-            if (endDate.HasValue) query = query.Where(d => d.Date <= endDate.Value.Date);
 
             finraData.ShortInterestData = await query
                 .OrderBy(d => d.Date)
