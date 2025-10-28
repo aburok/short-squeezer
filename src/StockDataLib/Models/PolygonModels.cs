@@ -90,10 +90,10 @@ namespace StockDataLib.Models
     public class PolygonShortInterestBarData
     {
         [JsonProperty("ticker")]
-        public string Ticker { get; set; } = string.Empty;
+        public string? Ticker { get; set; }
 
-        [JsonProperty("date")]
-        public string Date { get; set; } = string.Empty; // YYYY-MM-DD format
+        [JsonProperty("settlement_date")]
+        public string SettlementDate { get; set; } = string.Empty; // YYYY-MM-DD format
 
         [JsonProperty("short_interest")]
         public long ShortInterest { get; set; }
@@ -103,6 +103,24 @@ namespace StockDataLib.Models
 
         [JsonProperty("days_to_cover")]
         public decimal DaysToCover { get; set; }
+    }
+
+    /// <summary>
+    /// Represents the short interest API response from Polygon.io
+    /// </summary>
+    public class PolygonShortInterestResponse
+    {
+        [JsonProperty("next_url")]
+        public string? NextUrl { get; set; }
+
+        [JsonProperty("request_id")]
+        public string RequestId { get; set; } = string.Empty;
+
+        [JsonProperty("results")]
+        public List<PolygonShortInterestBarData> Results { get; set; } = new List<PolygonShortInterestBarData>();
+
+        [JsonProperty("status")]
+        public string Status { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -122,17 +140,68 @@ namespace StockDataLib.Models
     /// </summary>
     public class PolygonShortVolumeBarData
     {
+        [JsonProperty("adf_short_volume")]
+        public long? AdfShortVolume { get; set; }
+
+        [JsonProperty("adf_short_volume_exempt")]
+        public long? AdfShortVolumeExempt { get; set; }
+
         [JsonProperty("date")]
         public string Date { get; set; } = string.Empty; // YYYY-MM-DD format
 
-        [JsonProperty("short_volume")]
-        public long ShortVolume { get; set; }
+        [JsonProperty("exempt_volume")]
+        public long? ExemptVolume { get; set; }
 
-        [JsonProperty("total_volume")]
-        public long TotalVolume { get; set; }
+        [JsonProperty("nasdaq_carteret_short_volume")]
+        public long? NasdaqCarteretShortVolume { get; set; }
+
+        [JsonProperty("nasdaq_carteret_short_volume_exempt")]
+        public long? NasdaqCarteretShortVolumeExempt { get; set; }
+
+        [JsonProperty("nasdaq_chicago_short_volume")]
+        public long? NasdaqChicagoShortVolume { get; set; }
+
+        [JsonProperty("nasdaq_chicago_short_volume_exempt")]
+        public long? NasdaqChicagoShortVolumeExempt { get; set; }
+
+        [JsonProperty("non_exempt_volume")]
+        public long? NonExemptVolume { get; set; }
+
+        [JsonProperty("nyse_short_volume")]
+        public long? NyseShortVolume { get; set; }
+
+        [JsonProperty("nyse_short_volume_exempt")]
+        public long? NyseShortVolumeExempt { get; set; }
+
+        [JsonProperty("short_volume")]
+        public long? ShortVolume { get; set; }
 
         [JsonProperty("short_volume_ratio")]
-        public decimal ShortVolumeRatio { get; set; }
+        public decimal? ShortVolumeRatio { get; set; }
+
+        [JsonProperty("ticker")]
+        public string? Ticker { get; set; }
+
+        [JsonProperty("total_volume")]
+        public long? TotalVolume { get; set; }
+    }
+
+    /// <summary>
+    /// Represents the short volume API response from Polygon.io
+    /// </summary>
+    public class PolygonShortVolumeResponse
+    {
+        [JsonProperty("next_url")]
+        public string? NextUrl { get; set; }
+
+        [JsonProperty("request_id")]
+        public string RequestId { get; set; } = string.Empty;
+
+        [JsonProperty("results")]
+        public List<PolygonShortVolumeBarData> Results { get; set; } = new List<PolygonShortVolumeBarData>();
+
+        [JsonProperty("status")]
+        public string Status { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -140,9 +209,23 @@ namespace StockDataLib.Models
     /// </summary>
     public class PolygonShortVolumeData : StockDataPoint
     {
+        // Core volume fields
         public long ShortVolume { get; set; }
         public long TotalVolume { get; set; }
         public decimal ShortVolumeRatio { get; set; }
+
+        // Additional detailed volume breakdowns (optional)
+        public long? AdfShortVolume { get; set; }
+        public long? AdfShortVolumeExempt { get; set; }
+        public long? ExemptVolume { get; set; }
+        public long? NasdaqCarteretShortVolume { get; set; }
+        public long? NasdaqCarteretShortVolumeExempt { get; set; }
+        public long? NasdaqChicagoShortVolume { get; set; }
+        public long? NasdaqChicagoShortVolumeExempt { get; set; }
+        public long? NonExemptVolume { get; set; }
+        public long? NyseShortVolume { get; set; }
+        public long? NyseShortVolumeExempt { get; set; }
+
         public string? PolygonRequestId { get; set; }
     }
 }

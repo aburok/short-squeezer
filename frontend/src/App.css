@@ -96,6 +96,148 @@
   margin: 0;
 }
 
+/* Combined Controls Row - Ticker Search + Recently Viewed + Actions Menu */
+.combined-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+/* Column 1: Ticker Search (20%) */
+.ticker-search-col {
+  flex: 0 0 20%;
+  min-width: 150px;
+}
+
+.ticker-search-col .ticker-search {
+  width: 100%;
+}
+
+/* Column 2: Recently Viewed (40%) */
+.recently-viewed-col {
+  flex: 0 0 40%;
+  display: flex;
+  align-items: center;
+}
+
+.recently-viewed-col .recently-viewed-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.recently-viewed-col .section-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.recently-viewed-col .recent-tickers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Column 3: Actions Dropdown Menu (40%) */
+.actions-menu-col {
+  flex: 0 0 40%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions-dropdown {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+}
+
+.actions-button {
+  width: 100%;
+  padding: 10px 15px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  text-align: center;
+  font-weight: 500;
+}
+
+.actions-button:hover {
+  background: #0056b3;
+}
+
+.actions-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.actions-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 250px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.actions-menu-item {
+  display: block;
+  width: 100%;
+  padding: 12px 15px;
+  text-align: left;
+  border: none;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.actions-menu-item:last-child {
+  border-bottom: none;
+}
+
+.actions-menu-item:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.actions-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.recently-viewed-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.recently-viewed-inline .section-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.recently-viewed-inline .recent-tickers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Recently Viewed Tickers Section */
 .recently-viewed-section {
   margin-top: 15px;

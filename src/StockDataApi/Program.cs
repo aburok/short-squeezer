@@ -74,6 +74,10 @@ builder.Services.AddScoped<ITickerService, TickerService>();
 builder.Services.AddScoped<IFinraService, FinraService>();
 builder.Services.AddScoped<IPolygonService, PolygonService>();
 
+// Register CQRS handlers
+builder.Services.AddScoped<StockDataApi.Handlers.Queries.GetAllStockDataQueryHandler>();
+builder.Services.AddScoped<StockDataApi.Handlers.Commands.FetchPolygonDataCommandHandler>();
+
 // Configure Alpha Vantage options
 builder.Services.Configure<AlphaVantageOptions>(
     builder.Configuration.GetSection("AlphaVantage"));

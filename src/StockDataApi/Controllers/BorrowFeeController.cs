@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using StockDataApi.Models.Responses;
 using StockDataLib.Data;
 using StockDataLib.Models;
 
@@ -177,16 +178,6 @@ namespace StockDataApi.Controllers
                 return StatusCode(500, "An error occurred while retrieving the data");
             }
         }
-    }
-
-    /// <summary>
-    /// Data transfer object for borrow fee data
-    /// </summary>
-    public class BorrowFeeDataDto
-    {
-        public DateTime Date { get; set; }
-        public decimal Fee { get; set; }
-        public decimal? AvailableShares { get; set; }
     }
 }
 

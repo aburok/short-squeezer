@@ -1,0 +1,182 @@
+# Auto Agent Rules for Stock Data API
+
+## Project Overview
+This is a .NET 9 stock data API with React frontend that fetches and displays stock market data from multiple sources (Polygon.io, FINRA, ChartExchange). The project uses CQRS pattern with query/command handlers.
+
+## Architecture
+- **Backend**: .NET 9 Web API with Entity Framework Core
+- **Frontend**: React with TypeScript, Vite, Chart.js
+- **Database**: SQL Server
+- **Pattern**: CQRS with query/command handlers
+- **Services**: Polygon.io, FINRA, ChartExchange APIs
+
+## File Structure
+```
+src/
+├── StockDataApi/           # Main API project
+│   ├── Controllers/        # API controllers (unified StockDataController)
+│   ├── Handlers/           # CQRS handlers
+│   │   ├── Queries/        # Query handlers
+│   │   └── Commands/       # Command handlers
+│   └── Models/             # DTOs and models
+├── StockDataLib/           # Shared library
+│   ├── Models/             # Entity models
+│   ├── Services/           # External API services
+│   └── Data/               # EF DbContext
+├── StockDataWorker/        # Background worker service
+└── Test*/                  # Test projects
+
+frontend/                   # React frontend
+├── src/
+│   ├── components/         # React components
+│   └── App.tsx            # Main app
+```
+
+## Coding Standards
+
+### C# Backend
+- Use `async/await` for all I/O operations
+- Follow CQRS pattern: separate queries from commands
+- Use dependency injection for all services
+- Log all operations with structured logging
+- Use Entity Framework Core for data access
+- Cache frequently accessed data with `IMemoryCache`
+- Use `CancellationToken` for async operations
+
+### TypeScript Frontend
+- Use functional components with hooks
+- Type all props and state
+- Use `async/await` for API calls
+- Handle loading and error states
+- Use Chart.js for data visualization
+- Store recently viewed tickers in localStorage
+
+## API Endpoints
+- `GET /api/StockData/{symbol}` - Get all stock data (unified endpoint)
+- `POST /api/StockData/{symbol}/fetch-polygon` - Fetch Polygon data
+- Legacy endpoints still exist but are deprecated
+
+## Data Sources
+1. **Polygon.io**: Price, short interest, short volume data
+2. **FINRA**: Short interest data
+3. **ChartExchange**: Borrow fee data (web scraping)
+
+## Database Models
+- `StockTicker`: Main ticker entity
+- `PolygonPriceData`, `PolygonShortInterestData`, `PolygonShortVolumeData`
+- `FinraShortInterestData`
+- `BorrowFeeData`
+
+## Auto-Fix Rules
+
+### Build Errors
+- If compilation errors occur, check for missing using statements
+- Ensure all services are registered in Program.cs
+- Verify Entity Framework migrations are up to date
+- Check for duplicate DTOs in different namespaces
+
+### Runtime Errors
+- If API calls fail, check API keys in appsettings.json
+- Verify database connection string
+- Check HTTP client registrations for external APIs
+- Ensure CORS is configured for frontend
+
+### Frontend Issues
+- If charts don't display data, check data transformation in Dashboard.tsx
+- Verify API endpoint URLs match backend routes
+- Check for property name mismatches (e.g., `Date` vs `date`)
+
+## Common Tasks
+
+### Adding New Data Source
+1. Create service interface and implementation
+2. Add entity models to StockDataLib/Models
+3. Update StockDataContext with new DbSet
+4. Create EF migration
+5. Add query/command handlers
+6. Update unified controller
+7. Add frontend components if needed
+
+### Database Changes
+1. Modify entity models
+2. Run `dotnet ef migrations add <name> --project src/StockDataLib --startup-project src/StockDataApi`
+3. Run `dotnet ef database update --project src/StockDataLib --startup-project src/StockDataApi`
+
+### Frontend Updates
+1. Update components in frontend/src/components/
+2. Modify Dashboard.tsx for new data types
+3. Add new chart components if needed
+4. Update CSS in App.css
+
+## Performance Considerations
+- Cache API responses for 15 minutes
+- Use pagination for large datasets
+- Implement rate limiting for external APIs
+- Use async/await throughout
+- Minimize database queries with proper includes
+
+## Security
+- Store API keys in appsettings.json (not in source control)
+- Use HTTPS in production
+- Validate all input parameters
+- Implement proper CORS policies
+
+## Testing
+- Unit test handlers in isolation
+- Integration test API endpoints
+- Test frontend components with mock data
+- Verify external API integrations
+
+## Deployment
+- Use Docker containers for API and Worker
+- Frontend builds to static files
+- Use docker-compose for local development
+- Configure production connection strings
+
+## Monitoring
+- Log all API calls and errors
+- Monitor external API rate limits
+- Track database performance
+- Monitor frontend errors in browser console
+
+## Maintenance Tasks
+- Update NuGet packages regularly
+- Monitor external API changes
+- Clean up old migrations periodically
+- Update frontend dependencies
+- Review and optimize database queries
+
+## Common Issues & Solutions
+
+### "No such host is known"
+- Check HTTP client registration in Program.cs
+- Verify API base URLs in configuration
+
+### Build fails with file locked
+- Stop running API process before building
+- Use `dotnet build --no-restore` for faster builds
+
+### Charts not displaying
+- Check data format matches chart expectations
+- Verify API responses in browser dev tools
+- Check for property name casing issues
+
+### Database connection issues
+- Verify connection string in appsettings.json
+- Check SQL Server is running
+- Ensure database exists
+
+## Auto-Update Rules
+- Always use latest .NET 9 features
+- Keep Entity Framework Core updated
+- Update React and Chart.js dependencies
+- Monitor external API changes
+- Update Docker base images regularly
+
+## Code Quality
+- Use meaningful variable and method names
+- Add XML documentation for public APIs
+- Handle all exceptions gracefully
+- Use proper async patterns
+- Follow SOLID principles
+- Keep controllers thin, handlers focused

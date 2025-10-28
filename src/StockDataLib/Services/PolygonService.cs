@@ -181,14 +181,15 @@ namespace StockDataLib.Services
                 
                 try
                 {
-                    // Polygon returns an array of short interest data
-                    var apiDataList = JsonConvert.DeserializeObject<List<PolygonShortInterestBarData>>(content);
+                    // Deserialize the response with the correct structure
+                    var apiResponse = JsonConvert.DeserializeObject<PolygonShortInterestResponse>(content);
                     
-                    if (apiDataList != null && apiDataList.Count > 0)
+                    if (apiResponse != null && apiResponse.Status == "OK" && apiResponse.Results != null)
                     {
-                        foreach (var apiData in apiDataList)
+                        foreach (var apiData in apiResponse.Results)
                         {
-                            if (DateTime.TryParse(apiData.Date, out DateTime parsedDate))
+                            // Parse settlement_date (YYYY-MM-DD format)
+                            if (DateTime.TryParse(apiData.SettlementDate, out DateTime parsedDate))
                             {
                                 shortInterestData.Add(new PolygonShortInterestData
                                 {
@@ -198,13 +199,21 @@ namespace StockDataLib.Services
                                     AvgDailyVolume = apiData.AvgDailyVolume,
                                     DaysToCover = apiData.DaysToCover,
                                     SettlementDate = parsedDate.Date,
-                                    PolygonRequestId = response.RequestMessage?.RequestUri?.ToString()
+                                    PolygonRequestId = apiResponse.RequestId
                                 });
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Failed to parse settlement date: {Date}", apiData.SettlementDate);
                             }
                         }
                         
                         _logger.LogInformation("Successfully fetched {Count} short interest records from Polygon", 
                             shortInterestData.Count);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Polygon API returned status: {Status}", apiResponse?.Status ?? "null");
                     }
                 }
                 catch (JsonException ex)
@@ -263,40 +272,48 @@ namespace StockDataLib.Services
                 
                 try
                 {
-                    // Try to parse as short volume response
-                    var apiData = JsonConvert.DeserializeObject<dynamic>(content);
+                    // Deserialize the response with the correct structure
+                    var apiResponse = JsonConvert.DeserializeObject<PolygonShortVolumeResponse>(content);
                     
-                    if (apiData?.results != null)
+                    if (apiResponse != null && apiResponse.Status == "OK" && apiResponse.Results != null)
                     {
-                        foreach (var result in apiData.results)
+                        foreach (var apiData in apiResponse.Results)
                         {
-                            try
+                            // Parse date (YYYY-MM-DD format)
+                            if (DateTime.TryParse(apiData.Date, out DateTime parsedDate))
                             {
-                                long timestamp = result.t;
-                                DateTime date = DateTimeOffset.FromUnixTimeMilliseconds((long)timestamp).UtcDateTime.Date;
-
-                                // Check if short volume fields exist
-                                if (result.short_volume != null || result.si != null)
+                                shortVolumeData.Add(new PolygonShortVolumeData
                                 {
-                                    shortVolumeData.Add(new PolygonShortVolumeData
-                                    {
-                                        StockTickerSymbol = symbol.ToUpper(),
-                                        Date = date,
-                                        ShortVolume = (long)(result.short_volume ?? result.si?.short_volume ?? 0),
-                                        TotalVolume = (long)(result.v ?? 0),
-                                        ShortVolumeRatio = (decimal)(result.short_volume_ratio ?? 0),
-                                        PolygonRequestId = response.RequestMessage?.RequestUri?.ToString()
-                                    });
-                                }
+                                    StockTickerSymbol = symbol.ToUpper(),
+                                    Date = parsedDate.Date,
+                                    ShortVolume = apiData.ShortVolume ?? 0,
+                                    TotalVolume = apiData.TotalVolume ?? 0,
+                                    ShortVolumeRatio = apiData.ShortVolumeRatio ?? 0,
+                                    AdfShortVolume = apiData.AdfShortVolume,
+                                    AdfShortVolumeExempt = apiData.AdfShortVolumeExempt,
+                                    ExemptVolume = apiData.ExemptVolume,
+                                    NasdaqCarteretShortVolume = apiData.NasdaqCarteretShortVolume,
+                                    NasdaqCarteretShortVolumeExempt = apiData.NasdaqCarteretShortVolumeExempt,
+                                    NasdaqChicagoShortVolume = apiData.NasdaqChicagoShortVolume,
+                                    NasdaqChicagoShortVolumeExempt = apiData.NasdaqChicagoShortVolumeExempt,
+                                    NonExemptVolume = apiData.NonExemptVolume,
+                                    NyseShortVolume = apiData.NyseShortVolume,
+                                    NyseShortVolumeExempt = apiData.NyseShortVolumeExempt,
+                                    PolygonRequestId = apiResponse.RequestId
+                                });
                             }
-                            catch (Exception ex)
+                            else
                             {
-                                _logger.LogWarning(ex, "Failed to parse individual short volume record");
+                                _logger.LogWarning("Failed to parse date: {Date}", apiData.Date);
                             }
                         }
                         
                         _logger.LogInformation("Successfully fetched {Count} short volume records from Polygon", 
                             shortVolumeData.Count);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Polygon API returned status: {Status}", apiResponse?.Status ?? "null");
                     }
                 }
                 catch (JsonException ex)

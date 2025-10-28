@@ -37,10 +37,6 @@ interface BorrowFeeChartProps {
 }
 
 const BorrowFeeChart: React.FC<BorrowFeeChartProps> = ({ data, ticker, isLoading }) => {
-  // Debug logging
-  console.log('BorrowFeeChart - Props:', { data, ticker, isLoading });
-  console.log('BorrowFeeChart - Data length:', data?.length);
-  
   if (isLoading) {
     return (
       <div className="chart-container">

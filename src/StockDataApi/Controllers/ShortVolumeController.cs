@@ -8,7 +8,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using StockDataLib.Data;
 using StockDataLib.Models;
-using StockDataLib.Services;
 
 namespace StockDataApi.Controllers
 {
@@ -19,18 +18,15 @@ namespace StockDataApi.Controllers
         private readonly StockDataContext _context;
         private readonly IMemoryCache _cache;
         private readonly ILogger<ShortVolumeController> _logger;
-        private readonly IChartExchangeService _chartExchangeService;
 
         public ShortVolumeController(
             StockDataContext context,
             IMemoryCache cache,
-            ILogger<ShortVolumeController> logger,
-            IChartExchangeService chartExchangeService)
+            ILogger<ShortVolumeController> logger)
         {
             _context = context;
             _cache = cache;
             _logger = logger;
-            _chartExchangeService = chartExchangeService;
         }
 
         /// <summary>

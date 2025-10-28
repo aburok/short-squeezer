@@ -1,0 +1,86 @@
+{
+    "project": {
+        "name": "Stock Data API",
+        "type": "fullstack",
+        "backend": ".NET 9 Web API",
+        "frontend": "React TypeScript",
+        "database": "SQL Server",
+        "pattern": "CQRS"
+    },
+    "auto_fixes": {
+        "build_errors": {
+            "missing_usings": "Add missing using statements automatically",
+            "duplicate_dtos": "Resolve namespace conflicts by using fully qualified names",
+            "service_registration": "Check Program.cs for missing service registrations"
+        },
+        "runtime_errors": {
+            "api_keys": "Verify API keys in appsettings.json",
+            "database_connection": "Check connection strings",
+            "http_clients": "Ensure named HTTP clients are registered"
+        },
+        "frontend_issues": {
+            "chart_data": "Check data transformation in Dashboard.tsx",
+            "api_endpoints": "Verify endpoint URLs match backend routes",
+            "property_names": "Fix casing mismatches (Date vs date)"
+        }
+    },
+    "common_patterns": {
+        "cqrs": {
+            "queries": "Use GetAllStockDataQueryHandler for reads",
+            "commands": "Use FetchPolygonDataCommandHandler for writes",
+            "controllers": "Keep controllers thin, delegate to handlers"
+        },
+        "api_calls": {
+            "async": "Always use async/await",
+            "cancellation": "Include CancellationToken",
+            "logging": "Log all operations with structured logging",
+            "caching": "Cache for 15 minutes with IMemoryCache"
+        },
+        "frontend": {
+            "components": "Use functional components with hooks",
+            "types": "Type all props and state",
+            "error_handling": "Handle loading and error states",
+            "charts": "Use Chart.js for visualization"
+        }
+    },
+    "file_locations": {
+        "controllers": "src/StockDataApi/Controllers/",
+        "handlers": "src/StockDataApi/Handlers/",
+        "models": "src/StockDataApi/Models/",
+        "entities": "src/StockDataLib/Models/",
+        "services": "src/StockDataLib/Services/",
+        "frontend": "frontend/src/components/",
+        "config": "src/StockDataApi/appsettings.json"
+    },
+    "endpoints": {
+        "unified": "GET /api/StockData/{symbol}",
+        "fetch": "POST /api/StockData/{symbol}/fetch-polygon",
+        "legacy": "Deprecated individual controllers"
+    },
+    "data_sources": {
+        "polygon": "Price, short interest, short volume",
+        "finra": "Short interest data",
+        "chartexchange": "Borrow fee data (scraping)"
+    },
+    "auto_actions": {
+        "on_build_error": "Check missing usings, service registrations, migrations",
+        "on_runtime_error": "Verify API keys, connection strings, HTTP clients",
+        "on_frontend_error": "Check data format, API endpoints, property names",
+        "on_database_error": "Check connection string, SQL Server status",
+        "on_api_error": "Verify external API keys, rate limits, endpoints"
+    },
+    "maintenance": {
+        "packages": "Update NuGet packages regularly",
+        "dependencies": "Update React and Chart.js dependencies",
+        "migrations": "Clean up old migrations periodically",
+        "docker": "Update base images regularly",
+        "monitoring": "Monitor external API changes"
+    },
+    "quality_checks": {
+        "async_patterns": "Use async/await for all I/O",
+        "error_handling": "Handle exceptions gracefully",
+        "logging": "Log all operations",
+        "typing": "Type all frontend props/state",
+        "documentation": "Add XML docs for public APIs"
+    }
+}

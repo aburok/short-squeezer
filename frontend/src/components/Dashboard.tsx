@@ -22,10 +22,10 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
   const [isFetchingBlocks, setIsFetchingBlocks] = useState(false);
-  const [isFetchingIB, setIsFetchingIB] = useState(false);
   const [isFetchingPolygon, setIsFetchingPolygon] = useState(false);
   const [isFetchingAllPolygon, setIsFetchingAllPolygon] = useState(false);
   const [recentlyViewedTickers, setRecentlyViewedTickers] = useState<string[]>([]);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   const handleTickerSelect = (ticker: string) => {
     setSelectedTicker(ticker);
@@ -103,45 +103,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleFetchIBData = async () => {
-    if (!selectedTicker) {
-      setError('Please select a ticker first');
-      return;
-    }
-
-    setIsFetchingIB(true);
-    setError('');
-    
-    try {
-      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
-      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
-      
-      const response = await fetch(
-        `/api/InteractiveBrokers/${selectedTicker}/fetch?startDate=${startDateStr}&endDate=${endDateStr}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setError(`Successfully fetched ${result.count} Interactive Brokers data points for ${selectedTicker}!`);
-        // Refresh the chart data
-        fetchData();
-      } else {
-        setError(result.message || 'Failed to fetch IB data');
-      }
-    } catch (err) {
-      setError('Error fetching IB data: ' + (err as Error).message);
-    } finally {
-      setIsFetchingIB(false);
-    }
-  };
-
   const handleFetchPolygonData = async () => {
     if (!selectedTicker) {
       setError('Please select a ticker first');
@@ -189,7 +150,7 @@ const Dashboard = () => {
     
     try {
       const response = await fetch(
-        `/api/Polygon/${selectedTicker}/fetch-all`,
+        `/api/StockData/${selectedTicker}/fetch-polygon`,
         {
           method: 'POST',
           headers: {
@@ -246,19 +207,10 @@ const Dashboard = () => {
       const startDateStr = dateRange.startDate.toISOString().split('T')[0];
       const endDateStr = dateRange.endDate.toISOString().split('T')[0];
 
-      // Fetch short interest data
-      const shortInterestResponse = await fetch(
-        `/api/ShortInterest/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}`
-      );
-      const shortInterestResult = await shortInterestResponse.json();
-      setShortInterestData(shortInterestResult);
-
-      // Fetch short volume data
-      const shortVolumeResponse = await fetch(
-        `/api/ShortVolume/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}`
-      );
-      const shortVolumeResult = await shortVolumeResponse.json();
-      setShortVolumeData(shortVolumeResult);
+      // Don't fetch FINRA data, only Polygon data
+      // Set empty arrays for non-Polygon data
+      setShortInterestData([]);
+      setShortVolumeData([]);
 
       // Fetch borrow fee data
       const borrowFeeResponse = await fetch(
@@ -294,41 +246,35 @@ const Dashboard = () => {
       
       setBorrowFeeData(transformedBorrowFeeData);
 
-      // Fetch Polygon short interest data
+      // Fetch all Polygon data from unified endpoint
       try {
-        const polygonShortInterestResponse = await fetch(
-          `/api/Polygon/${selectedTicker}/short-interest?startDate=${startDateStr}&endDate=${endDateStr}`
+        const stockDataResponse = await fetch(
+          `/api/StockData/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}&includePolygon=true&includeBorrowFee=false`
         );
-        if (polygonShortInterestResponse.ok) {
-          const polygonShortInterestResult = await polygonShortInterestResponse.json();
-          console.log('Polygon Short Interest Data:', polygonShortInterestResult);
-          setPolygonShortInterestData(polygonShortInterestResult);
+        if (stockDataResponse.ok) {
+          const stockData = await stockDataResponse.json();
+          console.log('Stock Data Response:', stockData);
+          
+          // Extract Polygon short interest data
+          if (stockData.polygonData?.shortInterestData) {
+            setPolygonShortInterestData(stockData.polygonData.shortInterestData);
+          }
+          
+          // Extract Polygon short volume data
+          if (stockData.polygonData?.shortVolumeData) {
+            // Transform to match chart format
+            const transformedPolygonShortVolume = stockData.polygonData.shortVolumeData.map((item: any) => ({
+              date: item.date || item.Date,
+              shortVolume: Number(item.shortVolume || 0),
+              totalVolume: Number(item.totalVolume || 0),
+              shortVolumePercent: Number(item.shortVolumeRatio || 0)
+            }));
+            
+            setPolygonShortVolumeData(transformedPolygonShortVolume);
+          }
         }
       } catch (err) {
-        console.warn('Error fetching Polygon short interest:', err);
-      }
-
-      // Fetch Polygon short volume data
-      try {
-        const polygonShortVolumeResponse = await fetch(
-          `/api/Polygon/${selectedTicker}/short-volume?startDate=${startDateStr}&endDate=${endDateStr}`
-        );
-        if (polygonShortVolumeResponse.ok) {
-          const polygonShortVolumeResult = await polygonShortVolumeResponse.json();
-          console.log('Polygon Short Volume Data:', polygonShortVolumeResult);
-          
-          // Transform to match chart format
-          const transformedPolygonShortVolume = polygonShortVolumeResult.map((item: any) => ({
-            date: item.date || item.Date,
-            shortVolume: Number(item.shortVolume || 0),
-            totalVolume: Number(item.totalVolume || 0),
-            shortVolumePercent: Number(item.shortVolumeRatio || 0)
-          }));
-          
-          setPolygonShortVolumeData(transformedPolygonShortVolume);
-        }
-      } catch (err) {
-        console.warn('Error fetching Polygon short volume:', err);
+        console.warn('Error fetching Polygon data:', err);
       }
 
     } catch (err) {
@@ -358,86 +304,96 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <div className="dashboard-controls">
-        <div className="ticker-controls-row">
-          <TickerSearch onTickerSelect={handleTickerSelect} />
-          
-          <div className="button-group">
-            <button 
-              onClick={fetchData} 
-              disabled={!selectedTicker || isLoading}
-              className="fetch-button"
-            >
-              {isLoading ? 'Loading...' : 'Fetch Latest Data'}
-            </button>
-            
-            <button 
-              onClick={handleRefreshAllTickers} 
-              disabled={isRefreshingAll}
-              className="refresh-all-button"
-            >
-              {isRefreshingAll ? 'Refreshing...' : 'Refresh All Tickers'}
-            </button>
+        {/* Combined Row 1: Ticker Search + Recently Viewed + Actions Menu */}
+        <div className="combined-controls-row">
+          {/* Column 1: Ticker Search (20%) */}
+          <div className="ticker-search-col">
+            <TickerSearch onTickerSelect={handleTickerSelect} />
+          </div>
 
-            <button 
-              onClick={handleFetchBlocksSummary} 
-              disabled={isFetchingBlocks}
-              className="refresh-all-button"
-              style={{ marginLeft: '10px' }}
-            >
-              {isFetchingBlocks ? 'Fetching...' : 'Fetch FINRA Blocks Summary'}
-            </button>
+          {/* Column 2: Recently Viewed (40%) */}
+          <div className="recently-viewed-col">
+            {recentlyViewedTickers.length > 0 && (
+              <div className="recently-viewed-inline">
+                <div className="section-label">Recently Viewed:</div>
+                <div className="recent-tickers-list">
+                  {recentlyViewedTickers.map((ticker, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleTickerSelect(ticker)}
+                      className={`recent-ticker-btn ${selectedTicker === ticker ? 'active' : ''}`}
+                      title={`View ${ticker}`}
+                    >
+                      {ticker}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-            <button 
-              onClick={handleFetchIBData} 
-              disabled={!selectedTicker || isFetchingIB}
-              className="refresh-all-button"
-              style={{ marginLeft: '10px' }}
-            >
-              {isFetchingIB ? 'Fetching...' : 'Fetch IB Data'}
-            </button>
-
-            <button 
-              onClick={handleFetchPolygonData} 
-              disabled={!selectedTicker || isFetchingPolygon}
-              className="refresh-all-button"
-              style={{ marginLeft: '10px' }}
-            >
-              {isFetchingPolygon ? 'Fetching...' : 'Fetch Polygon Data (2 Years)'}
-            </button>
-
-            <button 
-              onClick={handleFetchAllPolygonData} 
-              disabled={!selectedTicker || isFetchingAllPolygon}
-              className="refresh-all-button"
-              style={{ marginLeft: '10px' }}
-            >
-              {isFetchingAllPolygon ? 'Fetching All...' : 'Fetch All Polygon Data'}
-            </button>
+          {/* Column 3: Actions Dropdown Menu (40%) */}
+          <div className="actions-menu-col">
+            <div className="actions-dropdown">
+              <button 
+                className="actions-button"
+                onClick={() => setShowActionsMenu(!showActionsMenu)}
+              >
+                Actions {showActionsMenu ? '^' : 'v'}
+              </button>
+              
+              {showActionsMenu && (
+                <div className="actions-menu">
+                  <button 
+                    onClick={() => {
+                      setShowActionsMenu(false);
+                      handleFetchPolygonData();
+                    }}
+                    disabled={!selectedTicker || isFetchingPolygon}
+                    className="actions-menu-item"
+                  >
+                    {isFetchingPolygon ? 'Fetching...' : 'Fetch Polygon Price Data'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowActionsMenu(false);
+                      handleFetchAllPolygonData();
+                    }}
+                    disabled={!selectedTicker || isFetchingAllPolygon}
+                    className="actions-menu-item"
+                  >
+                    {isFetchingAllPolygon ? 'Fetching All...' : 'Fetch All Polygon Data'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowActionsMenu(false);
+                      handleRefreshAllTickers();
+                    }}
+                    disabled={isRefreshingAll}
+                    className="actions-menu-item"
+                  >
+                    {isRefreshingAll ? 'Refreshing...' : 'Refresh All Tickers'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowActionsMenu(false);
+                      handleFetchBlocksSummary();
+                    }}
+                    disabled={isFetchingBlocks}
+                    className="actions-menu-item"
+                  >
+                    {isFetchingBlocks ? 'Fetching...' : 'Fetch FINRA Blocks Summary'}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Row 2: Date Range Picker */}
         <div className="date-range-control">
           <MovableDateRangePicker onDateRangeChange={handleDateRangeChange} />
         </div>
-
-        {/* Recently Viewed Tickers */}
-        {recentlyViewedTickers.length > 0 && (
-          <div className="recently-viewed-section">
-            <div className="section-label">Recently Viewed:</div>
-            <div className="recent-tickers-list">
-              {recentlyViewedTickers.map((ticker, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleTickerSelect(ticker)}
-                  className={`recent-ticker-btn ${selectedTicker === ticker ? 'active' : ''}`}
-                  title={`View ${ticker}`}
-                >
-                  {ticker}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {error && (
