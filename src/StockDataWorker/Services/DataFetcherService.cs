@@ -120,7 +120,11 @@ namespace StockDataWorker.Services
             
             try
             {
-                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(ticker.Symbol, ticker.Exchange);
+                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(
+                    ticker.Symbol, 
+                    ticker.Exchange, 
+                    DateTime.Now.AddDays(-30), 
+                    DateTime.Now);
                 
                 if (borrowFeeData.Any())
                 {

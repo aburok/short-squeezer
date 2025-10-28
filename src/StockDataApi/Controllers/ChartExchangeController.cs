@@ -322,6 +322,159 @@ namespace StockDataApi.Controllers
         }
 
         /// <summary>
+        /// Gets all short interest data for a specific ticker
+        /// </summary>
+        /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
+        /// <returns>A list of all short interest data points</returns>
+        [HttpGet("short-interest/{symbol}")]
+        public async Task<ActionResult<IEnumerable<ShortInterestDataDto>>> GetShortInterestData(string symbol)
+        {
+            try
+            {
+                symbol = symbol.ToUpper().Trim();
+                string cacheKey = $"ShortInterest_{symbol}";
+
+                if (_cache.TryGetValue(cacheKey, out List<ShortInterestDataDto> cachedData))
+                {
+                    _logger.LogInformation("Returning cached short interest data for {Symbol}", symbol);
+                    return cachedData;
+                }
+
+                var tickerExists = await _context.StockTickers.AnyAsync(t => t.Symbol == symbol);
+                if (!tickerExists)
+                {
+                    _logger.LogWarning("Ticker {Symbol} not found", symbol);
+                    return NotFound($"Ticker {symbol} not found");
+                }
+
+                var data = await _context.ShortInterestData
+                    .Where(d => d.StockTickerSymbol == symbol)
+                    .OrderBy(d => d.Date)
+                    .Select(d => new ShortInterestDataDto
+                    {
+                        Date = d.Date,
+                        ShortInterest = d.ShortInterest,
+                        SharesShort = d.SharesShort
+                    })
+                    .ToListAsync();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
+                _cache.Set(cacheKey, data, cacheOptions);
+
+                _logger.LogInformation("Retrieved {Count} short interest data points for {Symbol}", data.Count, symbol);
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving short interest data for {Symbol}", symbol);
+                return StatusCode(500, "An error occurred while retrieving the data");
+            }
+        }
+
+        /// <summary>
+        /// Gets all short volume data for a specific ticker
+        /// </summary>
+        /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
+        /// <returns>A list of all short volume data points</returns>
+        [HttpGet("short-volume/{symbol}")]
+        public async Task<ActionResult<IEnumerable<ShortVolumeDataDto>>> GetShortVolumeData(string symbol)
+        {
+            try
+            {
+                symbol = symbol.ToUpper().Trim();
+                string cacheKey = $"ShortVolume_{symbol}";
+
+                if (_cache.TryGetValue(cacheKey, out List<ShortVolumeDataDto> cachedData))
+                {
+                    _logger.LogInformation("Returning cached short volume data for {Symbol}", symbol);
+                    return cachedData;
+                }
+
+                var tickerExists = await _context.StockTickers.AnyAsync(t => t.Symbol == symbol);
+                if (!tickerExists)
+                {
+                    _logger.LogWarning("Ticker {Symbol} not found", symbol);
+                    return NotFound($"Ticker {symbol} not found");
+                }
+
+                var data = await _context.ShortVolumeData
+                    .Where(d => d.StockTickerSymbol == symbol)
+                    .OrderBy(d => d.Date)
+                    .Select(d => new ShortVolumeDataDto
+                    {
+                        Date = d.Date,
+                        ShortVolume = d.ShortVolume,
+                        ShortVolumePercent = d.ShortVolumePercent
+                    })
+                    .ToListAsync();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
+                _cache.Set(cacheKey, data, cacheOptions);
+
+                _logger.LogInformation("Retrieved {Count} short volume data points for {Symbol}", data.Count, symbol);
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving short volume data for {Symbol}", symbol);
+                return StatusCode(500, "An error occurred while retrieving the data");
+            }
+        }
+
+        /// <summary>
+        /// Gets all borrow fee data for a specific ticker
+        /// </summary>
+        /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
+        /// <returns>A list of all borrow fee data points</returns>
+        [HttpGet("borrow-fee/{symbol}")]
+        public async Task<ActionResult<IEnumerable<BorrowFeeDataDto>>> GetBorrowFeeData(string symbol)
+        {
+            try
+            {
+                symbol = symbol.ToUpper().Trim();
+                string cacheKey = $"BorrowFee_{symbol}";
+
+                if (_cache.TryGetValue(cacheKey, out List<BorrowFeeDataDto> cachedData))
+                {
+                    _logger.LogInformation("Returning cached borrow fee data for {Symbol}", symbol);
+                    return cachedData;
+                }
+
+                var tickerExists = await _context.StockTickers.AnyAsync(t => t.Symbol == symbol);
+                if (!tickerExists)
+                {
+                    _logger.LogWarning("Ticker {Symbol} not found", symbol);
+                    return NotFound($"Ticker {symbol} not found");
+                }
+
+                var data = await _context.BorrowFeeData
+                    .Where(d => d.StockTickerSymbol == symbol)
+                    .OrderBy(d => d.Date)
+                    .Select(d => new BorrowFeeDataDto
+                    {
+                        Date = d.Date,
+                        Fee = d.Fee,
+                        AvailableShares = d.AvailableShares
+                    })
+                    .ToListAsync();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
+                _cache.Set(cacheKey, data, cacheOptions);
+
+                _logger.LogInformation("Retrieved {Count} borrow fee data points for {Symbol}", data.Count, symbol);
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving borrow fee data for {Symbol}", symbol);
+                return StatusCode(500, "An error occurred while retrieving the data");
+            }
+        }
+
+        /// <summary>
         /// Fetches ChartExchange data for a symbol and stores it in the database
         /// </summary>
         /// <param name="symbol">The stock symbol (e.g., AAPL)</param>
@@ -531,5 +684,27 @@ namespace StockDataApi.Controllers
         public DateTime? PayableDate { get; set; }
         public DateTime? AnnouncementDate { get; set; }
         public string? CompanyName { get; set; }
+    }
+
+    // Additional DTOs for short interest, short volume, and borrow fee data
+    public class ShortInterestDataDto
+    {
+        public DateTime Date { get; set; }
+        public decimal ShortInterest { get; set; }
+        public long SharesShort { get; set; }
+    }
+
+    public class ShortVolumeDataDto
+    {
+        public DateTime Date { get; set; }
+        public long ShortVolume { get; set; }
+        public decimal ShortVolumePercent { get; set; }
+    }
+
+    public class BorrowFeeDataDto
+    {
+        public DateTime Date { get; set; }
+        public decimal Fee { get; set; }
+        public decimal? AvailableShares { get; set; }
     }
 }

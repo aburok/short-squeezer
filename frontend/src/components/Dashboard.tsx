@@ -19,22 +19,22 @@ const Dashboard = () => {
   const [allShortInterestData, setAllShortInterestData] = useState<any[]>([]);
   const [allShortVolumeData, setAllShortVolumeData] = useState<any[]>([]);
   const [allBorrowFeeData, setAllBorrowFeeData] = useState<any[]>([]);
-  const [allPolygonShortInterestData, setAllPolygonShortInterestData] = useState<any[]>([]);
-  const [allPolygonShortVolumeData, setAllPolygonShortVolumeData] = useState<any[]>([]);
+  const [allChartExchangeShortInterestData, setAllChartExchangeShortInterestData] = useState<any[]>([]);
+  const [allChartExchangeShortVolumeData, setAllChartExchangeShortVolumeData] = useState<any[]>([]);
 
   // Filtered data for display
   const [shortInterestData, setShortInterestData] = useState<any[]>([]);
   const [shortVolumeData, setShortVolumeData] = useState<any[]>([]);
   const [borrowFeeData, setBorrowFeeData] = useState<any[]>([]);
-  const [polygonShortInterestData, setPolygonShortInterestData] = useState<any[]>([]);
-  const [polygonShortVolumeData, setPolygonShortVolumeData] = useState<any[]>([]);
+  const [chartExchangeShortInterestData, setChartExchangeShortInterestData] = useState<any[]>([]);
+  const [chartExchangeShortVolumeData, setChartExchangeShortVolumeData] = useState<any[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
   const [isFetchingBlocks, setIsFetchingBlocks] = useState(false);
-  const [isFetchingPolygon, setIsFetchingPolygon] = useState(false);
-  const [isFetchingAllPolygon, setIsFetchingAllPolygon] = useState(false);
+  const [isFetchingChartExchange, setIsFetchingChartExchange] = useState(false);
+  const [isFetchingAllChartExchange, setIsFetchingAllChartExchange] = useState(false);
   const [recentlyViewedTickers, setRecentlyViewedTickers] = useState<string[]>([]);
 
   const handleTickerSelect = (ticker: string) => {
@@ -72,8 +72,8 @@ const Dashboard = () => {
     setShortInterestData(filterByDate(allShortInterestData));
     setShortVolumeData(filterByDate(allShortVolumeData));
     setBorrowFeeData(filterByDate(allBorrowFeeData));
-    setPolygonShortInterestData(filterByDate(allPolygonShortInterestData));
-    setPolygonShortVolumeData(filterByDate(allPolygonShortVolumeData));
+    setChartExchangeShortInterestData(filterByDate(allChartExchangeShortInterestData));
+    setChartExchangeShortVolumeData(filterByDate(allChartExchangeShortVolumeData));
   };
 
   const handleRefreshAllTickers = async () => {
@@ -132,18 +132,18 @@ const Dashboard = () => {
     }
   };
 
-  const handleFetchPolygonData = async () => {
+  const handleFetchChartExchangeData = async () => {
     if (!selectedTicker) {
       setError('Please select a ticker first');
       return;
     }
 
-    setIsFetchingPolygon(true);
+    setIsFetchingChartExchange(true);
     setError('');
 
     try {
       const response = await fetch(
-        `/api/Polygon/${selectedTicker}/fetch?years=2`,
+        `/api/ChartExchange/${selectedTicker}/fetch?years=2`,
         {
           method: 'POST',
           headers: {
@@ -155,31 +155,31 @@ const Dashboard = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setError(`Successfully fetched ${result.count} new Polygon data points (2 years) for ${selectedTicker}!`);
+        setError(`Successfully fetched ${result.count} new ChartExchange data points (2 years) for ${selectedTicker}!`);
         // Refresh the chart data
         fetchData();
       } else {
-        setError(result.message || 'Failed to fetch Polygon data');
+        setError(result.message || 'Failed to fetch ChartExchange data');
       }
     } catch (err) {
-      setError('Error fetching Polygon data: ' + (err as Error).message);
+      setError('Error fetching ChartExchange data: ' + (err as Error).message);
     } finally {
-      setIsFetchingPolygon(false);
+      setIsFetchingChartExchange(false);
     }
   };
 
-  const handleFetchAllPolygonData = async () => {
+  const handleFetchAllChartExchangeData = async () => {
     if (!selectedTicker) {
       setError('Please select a ticker first');
       return;
     }
 
-    setIsFetchingAllPolygon(true);
+    setIsFetchingAllChartExchange(true);
     setError('');
 
     try {
       const response = await fetch(
-        `/api/StockData/${selectedTicker}/fetch-polygon`,
+        `/api/StockData/${selectedTicker}/fetch-chartexchange`,
         {
           method: 'POST',
           headers: {
@@ -191,7 +191,7 @@ const Dashboard = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        let message = `Polygon data for ${selectedTicker}: `;
+        let message = `ChartExchange data for ${selectedTicker}: `;
         const parts = [];
 
         if (result.prices.skipped) {
@@ -200,16 +200,28 @@ const Dashboard = () => {
           parts.push(`Prices (${result.prices.fetched} records)`);
         }
 
-        if (result.shortInterest.skipped) {
-          parts.push(`Short Interest (skipped - data exists)`);
+        if (result.failureToDeliver.skipped) {
+          parts.push(`Failure to Deliver (skipped - data exists)`);
         } else {
-          parts.push(`Short Interest (${result.shortInterest.fetched} records)`);
+          parts.push(`Failure to Deliver (${result.failureToDeliver.fetched} records)`);
         }
 
-        if (result.shortVolume.skipped) {
-          parts.push(`Short Volume (skipped - data exists)`);
+        if (result.redditMentions.skipped) {
+          parts.push(`Reddit Mentions (skipped - data exists)`);
         } else {
-          parts.push(`Short Volume (${result.shortVolume.fetched} records)`);
+          parts.push(`Reddit Mentions (${result.redditMentions.fetched} records)`);
+        }
+
+        if (result.optionChain.skipped) {
+          parts.push(`Option Chain (skipped - data exists)`);
+        } else {
+          parts.push(`Option Chain (${result.optionChain.fetched} records)`);
+        }
+
+        if (result.stockSplits.skipped) {
+          parts.push(`Stock Splits (skipped - data exists)`);
+        } else {
+          parts.push(`Stock Splits (${result.stockSplits.fetched} records)`);
         }
 
         message += parts.join(', ');
@@ -217,12 +229,12 @@ const Dashboard = () => {
         // Refresh the chart data
         fetchData();
       } else {
-        setError(result.error || 'Failed to fetch Polygon data');
+        setError(result.error || 'Failed to fetch ChartExchange data');
       }
     } catch (err) {
-      setError('Error fetching Polygon data: ' + (err as Error).message);
+      setError('Error fetching ChartExchange data: ' + (err as Error).message);
     } finally {
-      setIsFetchingAllPolygon(false);
+      setIsFetchingAllChartExchange(false);
     }
   };
 
@@ -236,8 +248,8 @@ const Dashboard = () => {
       // Fetch ALL data without date filtering
       console.log(`Fetching all data for ${selectedTicker}...`);
 
-      // Don't fetch FINRA data, only Polygon data
-      // Set empty arrays for non-Polygon data
+      // Don't fetch FINRA data, only ChartExchange data
+      // Set empty arrays for non-ChartExchange data
       setAllShortInterestData([]);
       setAllShortVolumeData([]);
 
@@ -297,35 +309,35 @@ const Dashboard = () => {
         console.warn('Error fetching Short Volume data:', err);
       }
 
-      // Fetch ALL Polygon data from unified endpoint (no date filtering)
+      // Fetch ALL ChartExchange data from unified endpoint (no date filtering)
       try {
         const stockDataResponse = await fetch(
-          `/api/StockData/${selectedTicker}?includePolygon=true&includeBorrowFee=false`
+          `/api/StockData/${selectedTicker}?includeChartExchange=true&includeBorrowFee=false`
         );
         if (stockDataResponse.ok) {
           const stockData = await stockDataResponse.json();
           console.log('Stock Data Response:', stockData);
 
-          // Extract Polygon short interest data
-          if (stockData.polygonData?.shortInterestData) {
-            setAllPolygonShortInterestData(stockData.polygonData.shortInterestData);
+          // Extract ChartExchange short interest data
+          if (stockData.chartExchangeData?.shortInterestData) {
+            setAllChartExchangeShortInterestData(stockData.chartExchangeData.shortInterestData);
           }
 
-          // Extract Polygon short volume data
-          if (stockData.polygonData?.shortVolumeData) {
+          // Extract ChartExchange short volume data
+          if (stockData.chartExchangeData?.shortVolumeData) {
             // Transform to match chart format
-            const transformedPolygonShortVolume = stockData.polygonData.shortVolumeData.map((item: any) => ({
+            const transformedChartExchangeShortVolume = stockData.chartExchangeData.shortVolumeData.map((item: any) => ({
               date: item.date || item.Date,
               shortVolume: Number(item.shortVolume || 0),
               totalVolume: Number(item.totalVolume || 0),
               shortVolumePercent: Number(item.shortVolumeRatio || 0)
             }));
 
-            setAllPolygonShortVolumeData(transformedPolygonShortVolume);
+            setAllChartExchangeShortVolumeData(transformedChartExchangeShortVolume);
           }
         }
       } catch (err) {
-        console.warn('Error fetching Polygon data:', err);
+        console.warn('Error fetching ChartExchange data:', err);
       }
 
       // Apply initial date filtering to display data
@@ -397,29 +409,29 @@ const Dashboard = () => {
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   <Dropdown.Item
-                    onClick={handleFetchPolygonData}
-                    disabled={!selectedTicker || isFetchingPolygon}
+                    onClick={handleFetchChartExchangeData}
+                    disabled={!selectedTicker || isFetchingChartExchange}
                   >
-                    {isFetchingPolygon ? (
+                    {isFetchingChartExchange ? (
                       <>
                         <Spinner size="sm" className="me-2" />
                         Fetching...
                       </>
                     ) : (
-                      'Fetch Polygon Price Data'
+                      'Fetch ChartExchange Price Data'
                     )}
                   </Dropdown.Item>
                   <Dropdown.Item
-                    onClick={handleFetchAllPolygonData}
-                    disabled={!selectedTicker || isFetchingAllPolygon}
+                    onClick={handleFetchAllChartExchangeData}
+                    disabled={!selectedTicker || isFetchingAllChartExchange}
                   >
-                    {isFetchingAllPolygon ? (
+                    {isFetchingAllChartExchange ? (
                       <>
                         <Spinner size="sm" className="me-2" />
                         Fetching All...
                       </>
                     ) : (
-                      'Fetch All Polygon Data'
+                      'Fetch All ChartExchange Data'
                     )}
                   </Dropdown.Item>
                   <Dropdown.Divider />
@@ -506,22 +518,22 @@ const Dashboard = () => {
             </Col>
           </Row>
 
-          {/* Polygon Data Charts */}
-          {polygonShortInterestData.length > 0 && (
+          {/* ChartExchange Data Charts */}
+          {chartExchangeShortInterestData.length > 0 && (
             <Row className="mb-4">
               <Col md={6}>
                 <Card>
                   <Card.Header>
-                    <h5 className="mb-0">Polygon Short Interest - {selectedTicker}</h5>
+                    <h5 className="mb-0">ChartExchange Short Interest - {selectedTicker}</h5>
                   </Card.Header>
                   <Card.Body>
                     <div style={{ height: '300px' }}>
                       <Line
                         data={{
-                          labels: polygonShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
+                          labels: chartExchangeShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
                           datasets: [{
                             label: 'Short Interest',
-                            data: polygonShortInterestData.map((item: any) => Number(item.shortInterest || 0)),
+                            data: chartExchangeShortInterestData.map((item: any) => Number(item.shortInterest || 0)),
                             borderColor: 'rgb(255, 99, 132)',
                             backgroundColor: 'rgba(255, 99, 132, 0.1)',
                             borderWidth: 2,
@@ -540,21 +552,21 @@ const Dashboard = () => {
             </Row>
           )}
 
-          {polygonShortVolumeData.length > 0 && (
+          {chartExchangeShortVolumeData.length > 0 && (
             <Row className="mb-4">
               <Col md={6}>
                 <Card>
                   <Card.Header>
-                    <h5 className="mb-0">Polygon Short Volume - {selectedTicker}</h5>
+                    <h5 className="mb-0">ChartExchange Short Volume - {selectedTicker}</h5>
                   </Card.Header>
                   <Card.Body>
                     <div style={{ height: '300px' }}>
                       <Line
                         data={{
-                          labels: polygonShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
+                          labels: chartExchangeShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
                           datasets: [{
                             label: 'Short Volume %',
-                            data: polygonShortVolumeData.map((item: any) => Number(item.shortVolumePercent || 0)),
+                            data: chartExchangeShortVolumeData.map((item: any) => Number(item.shortVolumePercent || 0)),
                             borderColor: 'rgb(54, 162, 235)',
                             backgroundColor: 'rgba(54, 162, 235, 0.1)',
                             borderWidth: 2,

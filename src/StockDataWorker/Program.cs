@@ -41,8 +41,8 @@ namespace StockDataWorker
                     // Add HTTP client factory
                     services.AddHttpClient();
                     
-                    // Add HTTP client for Polygon
-                    services.AddHttpClient("Polygon");
+                    // Add HTTP client for ChartExchange
+                    services.AddHttpClient("ChartExchange");
                     
                     // Add database context
                     services.AddDbContext<StockDataContext>(options =>
@@ -59,12 +59,11 @@ namespace StockDataWorker
                     services.AddScoped<IAlphaVantageService, AlphaVantageService>();
                     services.AddScoped<ITickerService, TickerService>();
                     services.AddScoped<IFinraService, FinraService>();
-                    services.AddScoped<IPolygonService, PolygonService>();
                     
                     // Configure options
                     services.Configure<AlphaVantageOptions>(configuration.GetSection("AlphaVantage"));
                     services.Configure<FinraOptions>(configuration.GetSection("Finra"));
-                    services.Configure<PolygonOptions>(configuration.GetSection("Polygon"));
+                    services.Configure<ChartExchangeOptions>(configuration.GetSection("ChartExchange"));
                     services.Configure<DataFetcherOptions>(configuration.GetSection("DataFetcher"));
                     
                     // Add background service
