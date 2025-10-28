@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Alert, Button, Card, Col, Container, Dropdown, Row, Spinner } from 'react-bootstrap';
 import { Line } from 'react-chartjs-2';
-import { Container, Row, Col, Card, Button, Dropdown, Alert, Spinner } from 'react-bootstrap';
-import TickerSearch from './TickerSearch';
+import BorrowFeeChart from './BorrowFeeChart';
+import FinraShortInterestChart from './FinraShortInterestChart';
 import MovableDateRangePicker from './MovableDateRangePicker';
 import ShortInterestChart from './ShortInterestChart';
 import ShortVolumeChart from './ShortVolumeChart';
-import BorrowFeeChart from './BorrowFeeChart';
-import FinraShortInterestChart from './FinraShortInterestChart';
+import TickerSearch from './TickerSearch';
 
 const Dashboard = () => {
   const [selectedTicker, setSelectedTicker] = useState('');
@@ -26,12 +26,11 @@ const Dashboard = () => {
   const [isFetchingPolygon, setIsFetchingPolygon] = useState(false);
   const [isFetchingAllPolygon, setIsFetchingAllPolygon] = useState(false);
   const [recentlyViewedTickers, setRecentlyViewedTickers] = useState<string[]>([]);
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   const handleTickerSelect = (ticker: string) => {
     setSelectedTicker(ticker);
     setError('');
-    
+
     // Track recently viewed tickers
     if (ticker) {
       setRecentlyViewedTickers(prev => {
@@ -75,11 +74,11 @@ const Dashboard = () => {
   const handleFetchBlocksSummary = async () => {
     setIsFetchingBlocks(true);
     setError('');
-    
+
     try {
       const startDateStr = dateRange.startDate.toISOString().split('T')[0];
       const endDateStr = dateRange.endDate.toISOString().split('T')[0];
-      
+
       const response = await fetch(
         `/api/Finra/blocks-summary/fetch?startDate=${startDateStr}&endDate=${endDateStr}`,
         {
@@ -112,7 +111,7 @@ const Dashboard = () => {
 
     setIsFetchingPolygon(true);
     setError('');
-    
+
     try {
       const response = await fetch(
         `/api/Polygon/${selectedTicker}/fetch?years=2`,
@@ -148,7 +147,7 @@ const Dashboard = () => {
 
     setIsFetchingAllPolygon(true);
     setError('');
-    
+
     try {
       const response = await fetch(
         `/api/StockData/${selectedTicker}/fetch-polygon`,
@@ -165,25 +164,25 @@ const Dashboard = () => {
       if (response.ok && result.success) {
         let message = `Polygon data for ${selectedTicker}: `;
         const parts = [];
-        
+
         if (result.prices.skipped) {
           parts.push(`Prices (skipped - data exists)`);
         } else {
           parts.push(`Prices (${result.prices.fetched} records)`);
         }
-        
+
         if (result.shortInterest.skipped) {
           parts.push(`Short Interest (skipped - data exists)`);
         } else {
           parts.push(`Short Interest (${result.shortInterest.fetched} records)`);
         }
-        
+
         if (result.shortVolume.skipped) {
           parts.push(`Short Volume (skipped - data exists)`);
         } else {
           parts.push(`Short Volume (${result.shortVolume.fetched} records)`);
         }
-        
+
         message += parts.join(', ');
         setError(message);
         // Refresh the chart data
@@ -218,11 +217,11 @@ const Dashboard = () => {
         `/api/BorrowFee/${selectedTicker}?startDate=${startDateStr}&endDate=${endDateStr}`
       );
       const borrowFeeResult = await borrowFeeResponse.json();
-      
+
       // Debug logging
       console.log('Borrow Fee API Response:', borrowFeeResult);
       console.log('Borrow Fee Response Length:', borrowFeeResult?.length);
-      
+
       // Transform API response to match chart's expected format
       const transformedBorrowFeeData = borrowFeeResult.map((item: any) => {
         // Convert date to ISO string if needed
@@ -234,17 +233,17 @@ const Dashboard = () => {
           // If date is a Date object, convert to ISO string
           dateValue = new Date(dateValue).toISOString();
         }
-        
+
         return {
           date: dateValue,
           fee: Number(item.fee || item.Fee),
           availableShares: item.availableShares || item.AvailableShares
         };
       });
-      
+
       console.log('Transformed Borrow Fee Data:', transformedBorrowFeeData);
       console.log('Transformed Data Length:', transformedBorrowFeeData?.length);
-      
+
       setBorrowFeeData(transformedBorrowFeeData);
 
       // Fetch all Polygon data from unified endpoint
@@ -255,12 +254,12 @@ const Dashboard = () => {
         if (stockDataResponse.ok) {
           const stockData = await stockDataResponse.json();
           console.log('Stock Data Response:', stockData);
-          
+
           // Extract Polygon short interest data
           if (stockData.polygonData?.shortInterestData) {
             setPolygonShortInterestData(stockData.polygonData.shortInterestData);
           }
-          
+
           // Extract Polygon short volume data
           if (stockData.polygonData?.shortVolumeData) {
             // Transform to match chart format
@@ -270,7 +269,7 @@ const Dashboard = () => {
               totalVolume: Number(item.totalVolume || 0),
               shortVolumePercent: Number(item.shortVolumeRatio || 0)
             }));
-            
+
             setPolygonShortVolumeData(transformedPolygonShortVolume);
           }
         }
@@ -315,7 +314,7 @@ const Dashboard = () => {
             <Col md={3}>
               <TickerSearch onTickerSelect={handleTickerSelect} />
             </Col>
-            
+
             <Col md={5}>
               {recentlyViewedTickers.length > 0 && (
                 <div className="d-flex align-items-center">
@@ -336,14 +335,14 @@ const Dashboard = () => {
                 </div>
               )}
             </Col>
-            
+
             <Col md={4}>
               <Dropdown>
                 <Dropdown.Toggle variant="primary" id="actions-dropdown">
                   Actions
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
-                  <Dropdown.Item 
+                  <Dropdown.Item
                     onClick={handleFetchPolygonData}
                     disabled={!selectedTicker || isFetchingPolygon}
                   >
@@ -356,7 +355,7 @@ const Dashboard = () => {
                       'Fetch Polygon Price Data'
                     )}
                   </Dropdown.Item>
-                  <Dropdown.Item 
+                  <Dropdown.Item
                     onClick={handleFetchAllPolygonData}
                     disabled={!selectedTicker || isFetchingAllPolygon}
                   >
@@ -370,7 +369,7 @@ const Dashboard = () => {
                     )}
                   </Dropdown.Item>
                   <Dropdown.Divider />
-                  <Dropdown.Item 
+                  <Dropdown.Item
                     onClick={handleRefreshAllTickers}
                     disabled={isRefreshingAll}
                   >
@@ -383,7 +382,7 @@ const Dashboard = () => {
                       'Refresh All Tickers'
                     )}
                   </Dropdown.Item>
-                  <Dropdown.Item 
+                  <Dropdown.Item
                     onClick={handleFetchBlocksSummary}
                     disabled={isFetchingBlocks}
                   >
@@ -400,7 +399,7 @@ const Dashboard = () => {
               </Dropdown>
             </Col>
           </Row>
-          
+
           {/* Date Range Picker */}
           <Row>
             <Col>
@@ -428,23 +427,23 @@ const Dashboard = () => {
                   <h5 className="mb-0">Short Interest - {selectedTicker}</h5>
                 </Card.Header>
                 <Card.Body>
-                  <ShortInterestChart 
-                    data={shortInterestData} 
+                  <ShortInterestChart
+                    data={shortInterestData}
                     ticker={selectedTicker}
                     isLoading={isLoading}
                   />
                 </Card.Body>
               </Card>
             </Col>
-            
+
             <Col md={6}>
               <Card>
                 <Card.Header>
                   <h5 className="mb-0">Short Volume - {selectedTicker}</h5>
                 </Card.Header>
                 <Card.Body>
-                  <ShortVolumeChart 
-                    data={shortVolumeData} 
+                  <ShortVolumeChart
+                    data={shortVolumeData}
                     ticker={selectedTicker}
                     isLoading={isLoading}
                   />
@@ -463,7 +462,7 @@ const Dashboard = () => {
                   </Card.Header>
                   <Card.Body>
                     <div style={{ height: '300px' }}>
-                      <Line 
+                      <Line
                         data={{
                           labels: polygonShortInterestData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
                           datasets: [{
@@ -496,7 +495,7 @@ const Dashboard = () => {
                   </Card.Header>
                   <Card.Body>
                     <div style={{ height: '300px' }}>
-                      <Line 
+                      <Line
                         data={{
                           labels: polygonShortVolumeData.map((item: any) => new Date(item.date || item.Date).toLocaleDateString()),
                           datasets: [{
@@ -519,7 +518,7 @@ const Dashboard = () => {
               </Col>
             </Row>
           )}
-          
+
           {/* Borrow Fee Chart */}
           <Row className="mb-4">
             <Col md={6}>
@@ -528,8 +527,8 @@ const Dashboard = () => {
                   <h5 className="mb-0">Borrow Fee - {selectedTicker}</h5>
                 </Card.Header>
                 <Card.Body>
-                  <BorrowFeeChart 
-                    data={borrowFeeData} 
+                  <BorrowFeeChart
+                    data={borrowFeeData}
                     ticker={selectedTicker}
                     isLoading={isLoading}
                   />

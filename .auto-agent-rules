@@ -63,7 +63,7 @@ frontend/                   # React frontend
 
 ## Data Sources
 1. **Polygon.io**: Price, short interest, short volume data
-2. **FINRA**: Short interest data
+2. **FINRA**: Short interest data for out of market data
 3. **ChartExchange**: Borrow fee data (web scraping)
 
 ## Database Models

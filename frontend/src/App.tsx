@@ -1,8 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Navbar, Nav, Container } from 'react-bootstrap';
+import { Container, Nav, Navbar } from 'react-bootstrap';
+import { Link, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import './App.css';
 import Dashboard from './components/Dashboard';
 import FinraDashboard from './components/FinraDashboard';
-import './App.css';
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
             </Navbar.Collapse>
           </Container>
         </Navbar>
-        
+
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/finra" element={<FinraDashboard />} />
