@@ -45,5 +45,3 @@ GET http://localhost:80/api/finra/short-interest/MSFT
 Accept: application/json
 
 ### FETCH DATA FROM FINRA
-POST http://localhost:80/api/finra/blocks-summary/fetch?symbol=BYND
-Accept: application/json
