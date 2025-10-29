@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents option chain summary data stored in the database from ChartExchange
 /// </summary>
-public class ChartExchangeOptionChain : StockDataPoint
+public class OptionChain : StockDataPoint
 {
     public string ExpirationDate { get; set; } = string.Empty;
     public decimal StrikePrice { get; set; }

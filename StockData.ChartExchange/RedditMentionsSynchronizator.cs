@@ -2,8 +2,8 @@ using System.Globalization;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using StockData.ChartExchange.DataModels;
 using StockData.ChartExchange.Models;
+using StockData.Contracts.ChartExchange;
 using StockDataLib;
 using StockDataLib.Data;
 using StockDataLib.Models;
@@ -41,14 +41,14 @@ public class RedditMentionsSynchronizator(
         await context.SaveChangesAsync();
     }
 
-    private async Task<ChartExchangeRedditMentions[]> Fetch(string symbol, DateTimeOffset until)
+    private async Task<RedditMentionsEntity[]> Fetch(string symbol, DateTimeOffset until)
     {
         var url = "/data/reddit/mentions/stock/";
         var data =
             await chartExchangeDataClient
                 .GetPagedDataUntil<RedditMentionsResponse, RedditMentionsData,
-                    ChartExchangeRedditMentions>(
-                    symbol, url, (d) => new ChartExchangeRedditMentions()
+                    RedditMentionsEntity>(
+                    symbol, url, (d) => new RedditMentionsEntity()  
                     {
                         Date = DateTimeOffset.UtcNow,
                         Subreddit = d.Subreddit,

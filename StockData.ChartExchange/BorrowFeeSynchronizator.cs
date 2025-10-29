@@ -2,8 +2,8 @@ using System.Globalization;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using StockData.ChartExchange.DataModels;
 using StockData.ChartExchange.Models;
+using StockData.Contracts.ChartExchange;
 using StockDataLib;
 using StockDataLib.Data;
 using StockDataLib.Models;
@@ -44,13 +44,13 @@ public class BorrowFeeSynchronizator(
     /// <summary>
     /// Gets borrow fee data for a symbol within a date range
     /// </summary>
-    public async Task<ChartExchangeBorrowFee[]> Fetch(string symbol, DateTime endDate)
+    public async Task<BorrowFeeEntity[]> Fetch(string symbol, DateTime endDate)
     {
         var url = "/data/stocks/borrow-fee/ib/";
         var data =
             await dataClient
-                .GetPagedDataUntil<BorrowFeeResponse, BorrowFeeData, ChartExchangeBorrowFee>(
-                    symbol, url, (d) => new ChartExchangeBorrowFee()
+                .GetPagedDataUntil<BorrowFeeResponse, BorrowFeeData, BorrowFeeEntity>(
+                    symbol, url, (d) => new BorrowFeeEntity()
                     {
                         Date = DateTime.ParseExact(d.Timestamp, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
                         Available = d.Available,

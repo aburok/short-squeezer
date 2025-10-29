@@ -2,8 +2,8 @@ using System.Globalization;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using StockData.ChartExchange.DataModels;
 using StockData.ChartExchange.Models;
+using StockData.Contracts.ChartExchange;
 using StockDataLib;
 using StockDataLib.Data;
 using StockDataLib.Models;
@@ -41,12 +41,12 @@ public class FailureToDeliverSynchronizator(
         await context.SaveChangesAsync();
     }
 
-    private async Task<ChartExchangeFailureToDeliver[]> Fetch(string symbol, DateTimeOffset until)
+    private async Task<FailureToDeliverEntity[]> Fetch(string symbol, DateTimeOffset until)
     {
         var url = "/data/stocks/failure-to-deliver/";
         var data =
-            await chartExchangeDataClient.GetArrayData<FailureToDeliverData, ChartExchangeFailureToDeliver>(
-                symbol, url, (d) => new ChartExchangeFailureToDeliver()
+            await chartExchangeDataClient.GetArrayData<FailureToDeliverData, FailureToDeliverEntity>(
+                symbol, url, (d) => new FailureToDeliverEntity()
                 {
                     Date = DateTime.ParseExact(d.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture),
                     FailureToDeliver = d.FailureToDeliver,

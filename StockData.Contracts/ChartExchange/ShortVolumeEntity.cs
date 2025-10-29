@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents ChartExchange Short Volume data stored in the database
 /// </summary>
-public class ChartExchangeShortVolume : StockDataPoint
+public class ShortVolumeEntity : StockDataPoint
 {
     // Core volume fields
     public long Rt { get; set; } // Total volume

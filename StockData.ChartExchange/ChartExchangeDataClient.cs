@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using StockData.ChartExchange.Models;
+using StockData.Contracts;
 using StockDataLib.Models;
 using StockDataLib.Services;
 

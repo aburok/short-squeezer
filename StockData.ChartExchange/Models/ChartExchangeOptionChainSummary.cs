@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.ChartExchange.Models;
 
 /// <summary>
 /// Represents aggregated option chain summary data

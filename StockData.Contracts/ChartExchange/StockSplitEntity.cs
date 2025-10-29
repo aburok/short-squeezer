@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents stock split data stored in the database from ChartExchange
 /// </summary>
-public class ChartExchangeStockSplit : StockDataPoint
+public class StockSplitEntity : StockDataPoint
 {
     public string SplitRatio { get; set; } = string.Empty; // e.g., "2:1", "3:2"
     public decimal SplitFactor { get; set; } // e.g., 2.0 for 2:1 split

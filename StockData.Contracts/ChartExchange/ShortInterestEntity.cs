@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents ChartExchange Short Interest data stored in the database
 /// </summary>
-public class ChartExchangeShortInterest : StockDataPoint
+public class ShortInterestEntity : StockDataPoint
 {
     // Core short interest fields
     public decimal ShortInterestPercent { get; set; } // Parsed from short_interest string

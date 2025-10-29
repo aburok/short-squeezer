@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using StockData.Contracts;
+using StockData.Contracts.ChartExchange;
 using StockDataLib.Models;
 
 namespace StockDataLib.Data
@@ -13,13 +15,13 @@ namespace StockDataLib.Data
         public DbSet<FinraShortInterestData> FinraShortInterestData { get; set; }
 
         // ChartExchange data sets
-        public DbSet<ChartExchangeFailureToDeliver> ChartExchangeFailureToDeliver { get; set; }
-        public DbSet<ChartExchangeRedditMentions> ChartExchangeRedditMentions { get; set; }
-        public DbSet<ChartExchangeOptionChain> ChartExchangeOptionChain { get; set; }
-        public DbSet<ChartExchangeStockSplit> ChartExchangeStockSplit { get; set; }
-        public DbSet<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
-        public DbSet<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
-        public DbSet<ChartExchangeBorrowFee> ChartExchangeBorrowFee { get; set; }
+        public DbSet<FailureToDeliverEntity> ChartExchangeFailureToDeliver { get; set; }
+        public DbSet<RedditMentionsEntity> ChartExchangeRedditMentions { get; set; }
+        public DbSet<OptionChain> ChartExchangeOptionChain { get; set; }
+        public DbSet<StockSplitEntity> ChartExchangeStockSplit { get; set; }
+        public DbSet<ShortInterestEntity> ChartExchangeShortInterest { get; set; }
+        public DbSet<ShortVolumeEntity> ChartExchangeShortVolume { get; set; }
+        public DbSet<BorrowFeeEntity> ChartExchangeBorrowFee { get; set; }
         public DbSet<ChartExchangeBorrowFeeDaily> ChartExchangeBorrowFeeDaily { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -68,19 +70,19 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<FinraShortInterestData>(modelBuilder);
 
             // Configure ChartExchange data points
-            ConfigureStockDataPoint<ChartExchangeFailureToDeliver>(modelBuilder);
-            ConfigureStockDataPoint<ChartExchangeRedditMentions>(modelBuilder);
-            ConfigureStockDataPoint<ChartExchangeOptionChain>(modelBuilder);
-            ConfigureStockDataPoint<ChartExchangeStockSplit>(modelBuilder);
-            ConfigureStockDataPoint<ChartExchangeShortInterest>(modelBuilder);
-            ConfigureStockDataPoint<ChartExchangeShortVolume>(modelBuilder);
-            ConfigureStockDataPoint<ChartExchangeBorrowFee>(modelBuilder);
+            ConfigureStockDataPoint<FailureToDeliverEntity>(modelBuilder);
+            ConfigureStockDataPoint<RedditMentionsEntity>(modelBuilder);
+            ConfigureStockDataPoint<OptionChain>(modelBuilder);
+            ConfigureStockDataPoint<StockSplitEntity>(modelBuilder);
+            ConfigureStockDataPoint<ShortInterestEntity>(modelBuilder);
+            ConfigureStockDataPoint<ShortVolumeEntity>(modelBuilder);
+            ConfigureStockDataPoint<BorrowFeeEntity>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeBorrowFeeDaily>(modelBuilder);
 
-            modelBuilder.Entity<StockTicker>()
-                .HasMany(s => s.FinraShortInterestData)
-                .WithOne(d => d.StockTicker)
-                .HasForeignKey(d => d.StockTickerSymbol);
+            // modelBuilder.Entity<StockTicker>()
+            //     .HasMany(s => s.FinraShortInterestData)
+            //     .WithOne(d => d.StockTicker)
+            //     .HasForeignKey(d => d.StockTickerSymbol);
 
             modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.ChartExchangeFailureToDeliver)

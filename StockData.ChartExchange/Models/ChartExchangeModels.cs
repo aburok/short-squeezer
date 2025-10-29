@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using StockData.ChartExchange.DataModels;
 using StockDataLib.Models;
 
 namespace StockData.ChartExchange.Models

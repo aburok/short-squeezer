@@ -2,8 +2,8 @@ using System.Globalization;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using StockData.ChartExchange.DataModels;
 using StockData.ChartExchange.Models;
+using StockData.Contracts.ChartExchange;
 using StockDataLib;
 using StockDataLib.Data;
 using StockDataLib.Models;
@@ -40,12 +40,12 @@ public class ShortInterestSynchronizator(
     /// <summary>
     /// Gets short interest data for a symbol within a date range
     /// </summary>
-    public async Task<ChartExchangeShortInterest[]> Fetch(string symbol)
+    public async Task<ShortInterestEntity[]> Fetch(string symbol)
     {
         var url = "/data/stocks/short-interest/";
         var data =
-            await dataClient.GetArrayData<ShortInterestData, ChartExchangeShortInterest>(
-                symbol, url, (d) => new ChartExchangeShortInterest()
+            await dataClient.GetArrayData<ShortInterestData, ShortInterestEntity>(
+                symbol, url, (d) => new ShortInterestEntity()
                 {
                     Date = DateTime.ParseExact(d.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ShortInterestPercent = decimal.TryParse(d.ShortInterest, out var shortInterestPercent)

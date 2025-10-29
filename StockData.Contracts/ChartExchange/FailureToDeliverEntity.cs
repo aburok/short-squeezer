@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents failure to deliver data stored in the database from ChartExchange
 /// </summary>
-public class ChartExchangeFailureToDeliver : StockDataPoint
+public class FailureToDeliverEntity : StockDataPoint
 {
     public long FailureToDeliver { get; set; }
     public decimal Price { get; set; }

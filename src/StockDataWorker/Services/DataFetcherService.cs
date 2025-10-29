@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using StockData.Contracts;
 using StockDataLib.Data;
 using StockDataLib.Models;
 using StockDataLib.Services;

@@ -14,4 +14,8 @@
       <PackageReference Include="JetBrains.Annotations" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="DataModels\" />
+    </ItemGroup>
+
 </Project>

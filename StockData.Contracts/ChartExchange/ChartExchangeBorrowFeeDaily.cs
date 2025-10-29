@@ -1,6 +1,4 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents daily aggregated ChartExchange Borrow Fee data (OHLC - Open, High, Low, Close)

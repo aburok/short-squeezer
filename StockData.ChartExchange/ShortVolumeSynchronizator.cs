@@ -2,8 +2,8 @@ using System.Globalization;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using StockData.ChartExchange.DataModels;
 using StockData.ChartExchange.Models;
+using StockData.Contracts.ChartExchange;
 using StockDataLib;
 using StockDataLib.Data;
 using StockDataLib.Models;
@@ -44,11 +44,11 @@ public class ShortVolumeSynchronizator(
     /// <summary>
     /// Gets short volume data for a symbol within a date range
     /// </summary>
-    public async Task<ChartExchangeShortVolume[]> Fetch(string symbol, DateTimeOffset until)
+    public async Task<ShortVolumeEntity[]> Fetch(string symbol, DateTimeOffset until)
     {
         var url = "/data/stocks/short-volume/";
-        var data = await dataClient.GetPagedDataUntil<ShortVolumeResponse,ShortVolumeData, ChartExchangeShortVolume>(
-            symbol, url, (d) => new ChartExchangeShortVolume()
+        var data = await dataClient.GetPagedDataUntil<ShortVolumeResponse,ShortVolumeData, ShortVolumeEntity>(
+            symbol, url, (d) => new ShortVolumeEntity()
             {
                 Date = DateTime.ParseExact(d.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Rt = d.Rt,

@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents ChartExchange Borrow Fee data stored in the database
 /// </summary>
-public class ChartExchangeBorrowFee : StockDataPoint
+public class BorrowFeeEntity : StockDataPoint
 {
     // Core borrow fee fields
     public long Available { get; set; } // Available shares

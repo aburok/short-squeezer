@@ -1,11 +1,9 @@
-using StockDataLib.Models;
-
-namespace StockData.ChartExchange.DataModels;
+namespace StockData.Contracts.ChartExchange;
 
 /// <summary>
 /// Represents Reddit mentions data stored in the database from ChartExchange
 /// </summary>
-public class ChartExchangeRedditMentions : StockDataPoint
+public class RedditMentionsEntity : StockDataPoint
 {
     public string Subreddit { get; set; }
 

@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using StockData.Contracts;
 using StockDataLib.Data;
 using StockDataLib.Models;
 
