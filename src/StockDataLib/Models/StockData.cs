@@ -23,6 +23,7 @@ namespace StockDataLib.Models
         public ICollection<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
         public ICollection<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
         public ICollection<ChartExchangeBorrowFee> ChartExchangeBorrowFee { get; set; }
+        public ICollection<ChartExchangeBorrowFeeDaily> ChartExchangeBorrowFeeDaily { get; set; }
     }
 
     /// <summary>
@@ -33,6 +34,8 @@ namespace StockDataLib.Models
         public int Id { get; set; }
         public string StockTickerSymbol { get; set; } = string.Empty;
         public DateTimeOffset Date { get; set; }
+
+        public string? ChartExchangeRequestId { get; set; }
 
         // Navigation property
         public StockTicker StockTicker { get; set; } = null!;

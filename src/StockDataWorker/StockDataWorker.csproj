@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\StockData.ChartExchange\StockData.ChartExchange.csproj" />
     <ProjectReference Include="..\StockDataLib\StockDataLib.csproj" />
   </ItemGroup>
 </Project>

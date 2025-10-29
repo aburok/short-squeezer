@@ -38,7 +38,6 @@ namespace StockDataApi.Controllers
         [HttpGet("{symbol}")]
         public async Task<IActionResult> GetAllStockData(
             string symbol,
-            [FromQuery] bool includeBorrowFee = true,
             [FromQuery] bool includeChartExchange = true,
             [FromQuery] bool includeFinra = false)
         {

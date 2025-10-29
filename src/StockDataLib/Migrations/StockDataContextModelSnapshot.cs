@@ -33,6 +33,9 @@ namespace StockDataLib.Migrations
                     b.Property<long>("Available")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("ChartExchangeRequestId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("Date")
                         .HasColumnType("datetimeoffset");
 
@@ -53,6 +56,60 @@ namespace StockDataLib.Migrations
                         .IsUnique();
 
                     b.ToTable("ChartExchangeBorrowFee");
+                });
+
+            modelBuilder.Entity("StockDataLib.Models.ChartExchangeBorrowFeeDaily", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Average")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("AverageAvailable")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ChartExchangeRequestId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Close")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DataPointCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("High")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Low")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("MaxAvailable")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MinAvailable")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Open")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("StockTickerSymbol")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StockTickerSymbol", "Date")
+                        .IsUnique();
+
+                    b.ToTable("ChartExchangeBorrowFeeDaily");
                 });
 
             modelBuilder.Entity("StockDataLib.Models.ChartExchangeFailureToDeliver", b =>
@@ -176,22 +233,22 @@ namespace StockDataLib.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("Comments")
-                        .HasColumnType("int");
+                    b.Property<string>("Author")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChartExchangeRequestId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("Date")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<decimal?>("EngagementScore")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Mentions")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SentimentLabel")
+                    b.Property<string>("Link")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("SentimentScore")
+                    b.Property<decimal?>("Sentiment")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("StockTickerSymbol")
@@ -200,10 +257,17 @@ namespace StockDataLib.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Subreddit")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("Upvotes")
-                        .HasColumnType("int");
+                    b.Property<string>("Text")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ThingId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ThingType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -344,6 +408,9 @@ namespace StockDataLib.Migrations
                     b.Property<DateTime?>("AnnouncementDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ChartExchangeRequestId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CompanyName")
                         .HasColumnType("nvarchar(max)");
 
@@ -395,6 +462,9 @@ namespace StockDataLib.Migrations
 
                     b.Property<long>("AvgDailyVolume")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("ChartExchangeRequestId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("Date")
                         .HasColumnType("datetimeoffset");
@@ -458,6 +528,17 @@ namespace StockDataLib.Migrations
                 {
                     b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
                         .WithMany("ChartExchangeBorrowFee")
+                        .HasForeignKey("StockTickerSymbol")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StockTicker");
+                });
+
+            modelBuilder.Entity("StockDataLib.Models.ChartExchangeBorrowFeeDaily", b =>
+                {
+                    b.HasOne("StockDataLib.Models.StockTicker", "StockTicker")
+                        .WithMany("ChartExchangeBorrowFeeDaily")
                         .HasForeignKey("StockTickerSymbol")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -545,6 +626,8 @@ namespace StockDataLib.Migrations
             modelBuilder.Entity("StockDataLib.Models.StockTicker", b =>
                 {
                     b.Navigation("ChartExchangeBorrowFee");
+
+                    b.Navigation("ChartExchangeBorrowFeeDaily");
 
                     b.Navigation("ChartExchangeFailureToDeliver");
 

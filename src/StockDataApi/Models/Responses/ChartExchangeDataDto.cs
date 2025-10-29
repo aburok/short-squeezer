@@ -9,4 +9,5 @@ public class ChartExchangeDataDto
     public ChartExchangeShortInterestDataDto[] ShortInterestData { get; set; } = Array.Empty<ChartExchangeShortInterestDataDto>();
     public ChartExchangeShortVolumeDataDto[] ShortVolumeData { get; set; } = Array.Empty<ChartExchangeShortVolumeDataDto>();
     public ChartExchangeBorrowFeeDataDto[] BorrowFeeData { get; set; } = Array.Empty<ChartExchangeBorrowFeeDataDto>();
+    public ChartExchangeBorrowFeeDailyDataDto[] BorrowFeeDailyData { get; set; } = Array.Empty<ChartExchangeBorrowFeeDailyDataDto>();
 }

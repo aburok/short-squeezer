@@ -24,18 +24,15 @@ namespace StockDataLib.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<TickerService> _logger;
         private readonly StockDataContext _context;
-        private readonly IChartExchangeService _chartExchangeService;
 
         public TickerService(
             IHttpClientFactory httpClientFactory,
             ILogger<TickerService> logger,
-            StockDataContext context,
-            IChartExchangeService chartExchangeService)
+            StockDataContext context)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _context = context;
-            _chartExchangeService = chartExchangeService;
         }
 
         /// <summary>
@@ -160,64 +157,14 @@ namespace StockDataLib.Services
                 string content = await response.Content.ReadAsStringAsync();
 
                 // Parse NASDAQ format
-                return ParseNasdaqTickers(content);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching tickers from NASDAQ fallback for {Exchange}", exchange);
                 return new List<StockTicker>();
             }
-        }
 
-        /// <summary>
-        /// Parses tickers from NASDAQ pipe-delimited format (fallback method)
-        /// </summary>
-        /// <param name="content">The NASDAQ data content</param>
-        /// <returns>A list of stock tickers</returns>
-        private List<StockTicker> ParseNasdaqTickers(string content)
-        {
-            try
-            {
-                var tickers = new List<StockTicker>();
-                var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-                // Skip the header line and process each line
-                for (int i = 1; i < lines.Length; i++)
-                {
-                    var line = lines[i].Trim();
-                    if (string.IsNullOrEmpty(line)) continue;
-
-                    var parts = line.Split('|');
-
-                    // NASDAQ format: Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
-                    if (parts.Length >= 2)
-                    {
-                        string symbol = parts[0].Trim();
-                        string name = parts[1].Trim();
-                        string testIssue = parts.Length > 3 ? parts[3].Trim() : "";
-
-                        // Skip test issues and invalid symbols
-                        if (testIssue == "Y" || string.IsNullOrEmpty(symbol) || symbol.Length > 5)
-                            continue;
-
-                        tickers.Add(new StockTicker
-                        {
-                            Symbol = symbol,
-                            Name = name,
-                            Exchange = "nasdaq",
-                            LastUpdated = DateTime.UtcNow
-                        });
-                    }
-                }
-
-                _logger.LogInformation("Successfully parsed {Count} NASDAQ tickers (fallback)", tickers.Count);
-                return tickers;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error parsing NASDAQ tickers (fallback)");
-                return new List<StockTicker>();
-            }
+            return null;
         }
 
         /// <summary>

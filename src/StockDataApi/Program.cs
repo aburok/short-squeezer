@@ -8,6 +8,8 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StockData.ChartExchange;
+using StockDataApi;
 using StockDataLib;
 
 
@@ -53,11 +55,14 @@ builder.Services.AddDbContext<StockDataContext>(options =>
 // Add HTTP client factory
 builder.Services.AddHttpClient();
 
+builder.Services.AddSingleton<IHttpResiliencePolicyFactory, HttpResiliencePolicyFactory>();
+
 // Add HTTP client for ChartExchange with SSL certificate handling
 builder.Services.AddHttpClient("ChartExchange", client =>
 {
     client.Timeout = TimeSpan.FromMinutes(5);
 })
+.AddPolicyHandler(HttpResiliencePolicyFactory.GetRetryPolicy())
 .ConfigurePrimaryHttpMessageHandler(serviceProvider =>
 {
     var handler = new HttpClientHandler();
@@ -101,7 +106,6 @@ builder.Services.AddCors(options =>
 });
 
 // Register services
-builder.Services.AddScoped<IChartExchangeService, ChartExchangeService>();
 builder.Services.AddScoped<ITickerService, TickerService>();
 builder.Services.AddScoped<IFinraService, FinraService>();
 

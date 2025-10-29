@@ -1,17 +1,18 @@
-import React from 'react';
 import {
-  Chart as ChartJS,
   CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
   LinearScale,
-  PointElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
-  Filler,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import moment from 'moment';
+import React from 'react';
+import { Badge, Card, Col, Row } from 'react-bootstrap';
+import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -28,6 +29,12 @@ interface BorrowFeeData {
   date: string;
   fee: number;
   availableShares?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+  average?: number;
+  dataPointCount?: number;
 }
 
 interface BorrowFeeChartProps {
@@ -39,27 +46,37 @@ interface BorrowFeeChartProps {
 const BorrowFeeChart: React.FC<BorrowFeeChartProps> = ({ data, ticker, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="chart-container">
-        <div className="chart-header">
-          <h3>Borrow Fee - {ticker}</h3>
-        </div>
-        <div className="chart-loading">
-          <p>Loading borrow fee data...</p>
-        </div>
-      </div>
+      <Card>
+        <Card.Header>
+          <h5 className="mb-0">Borrow Fee - {ticker}</h5>
+        </Card.Header>
+        <Card.Body>
+          <div className="text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-2 mb-0">Loading borrow fee data...</p>
+          </div>
+        </Card.Body>
+      </Card>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="chart-container">
-        <div className="chart-header">
-          <h3>Borrow Fee - {ticker}</h3>
-        </div>
-        <div className="chart-no-data">
-          <p>No borrow fee data available for {ticker}</p>
-        </div>
-      </div>
+      <Card>
+        <Card.Header>
+          <h5 className="mb-0">Borrow Fee - {ticker}</h5>
+        </Card.Header>
+        <Card.Body>
+          <div className="text-center py-4">
+            <div className="text-muted">
+              <i className="bi bi-graph-down fs-1"></i>
+              <p className="mt-2 mb-0">No borrow fee data available for {ticker}</p>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
     );
   }
 
@@ -70,19 +87,43 @@ const BorrowFeeChart: React.FC<BorrowFeeChartProps> = ({ data, ticker, isLoading
     labels: sortedData.map(item => moment(item.date).format('MMM DD')),
     datasets: [
       {
-        label: 'Borrow Fee (%)',
+        label: 'Borrow Fee Close (%)',
         data: sortedData.map(item => item.fee),
-        borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+        borderColor: 'rgb(220, 53, 69)', // Bootstrap danger color
+        backgroundColor: 'rgba(220, 53, 69, 0.1)',
         borderWidth: 2,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: 'rgb(255, 99, 132)',
+        pointBackgroundColor: 'rgb(220, 53, 69)',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
       },
+      {
+        label: 'Borrow Fee High (%)',
+        data: sortedData.map(item => item.high || item.fee),
+        borderColor: 'rgb(25, 135, 84)', // Bootstrap success color
+        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+        borderWidth: 1,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 4,
+        borderDash: [5, 5],
+      },
+      {
+        label: 'Borrow Fee Low (%)',
+        data: sortedData.map(item => item.low || item.fee),
+        borderColor: 'rgb(13, 202, 240)', // Bootstrap info color
+        backgroundColor: 'rgba(13, 202, 240, 0.1)',
+        borderWidth: 1,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 4,
+        borderDash: [5, 5],
+      }
     ],
   };
 
@@ -104,18 +145,36 @@ const BorrowFeeChart: React.FC<BorrowFeeChartProps> = ({ data, ticker, isLoading
         mode: 'index' as const,
         intersect: false,
         callbacks: {
-          title: function(context: any) {
+          title: function (context: any) {
             const dataIndex = context[0].dataIndex;
             return moment(sortedData[dataIndex].date).format('MMMM DD, YYYY');
           },
-          label: function(context: any) {
+          label: function (context: any) {
             const dataIndex = context.dataIndex;
             const item = sortedData[dataIndex];
-            let label = `Borrow Fee: ${item.fee.toFixed(2)}%`;
-            if (item.availableShares) {
-              label += `\nAvailable Shares: ${item.availableShares.toLocaleString()}`;
+            const datasetLabel = context.dataset.label;
+
+            if (datasetLabel === 'Borrow Fee Close (%)') {
+              let label = `Close: ${item.fee.toFixed(2)}%`;
+              if (item.open !== undefined) {
+                label += `\nOpen: ${item.open.toFixed(2)}%`;
+                label += `\nHigh: ${item.high?.toFixed(2)}%`;
+                label += `\nLow: ${item.low?.toFixed(2)}%`;
+                label += `\nAverage: ${item.average?.toFixed(2)}%`;
+              }
+              if (item.availableShares) {
+                label += `\nAvg Available: ${item.availableShares.toLocaleString()}`;
+              }
+              if (item.dataPointCount) {
+                label += `\nData Points: ${item.dataPointCount}`;
+              }
+              return label;
+            } else if (datasetLabel === 'Borrow Fee High (%)') {
+              return `High: ${item.high?.toFixed(2)}%`;
+            } else if (datasetLabel === 'Borrow Fee Low (%)') {
+              return `Low: ${item.low?.toFixed(2)}%`;
             }
-            return label;
+            return `${datasetLabel}: ${context.parsed.y.toFixed(2)}%`;
           },
         },
       },
@@ -152,42 +211,62 @@ const BorrowFeeChart: React.FC<BorrowFeeChartProps> = ({ data, ticker, isLoading
     },
   };
 
-  // Calculate statistics
-  const fees = sortedData.map(item => item.fee);
-  const minFee = Math.min(...fees);
-  const maxFee = Math.max(...fees);
-  const avgFee = fees.reduce((sum, fee) => sum + fee, 0) / fees.length;
+  // Calculate statistics using OHLC data
+  const highs = sortedData.map(item => item.high || item.fee);
+  const lows = sortedData.map(item => item.low || item.fee);
+  const averages = sortedData.map(item => item.average || item.fee);
+
+  const minFee = Math.min(...lows);
+  const maxFee = Math.max(...highs);
+  const avgFee = averages.reduce((sum, fee) => sum + fee, 0) / averages.length;
   const latestFee = sortedData[sortedData.length - 1]?.fee;
 
   return (
-    <div className="chart-container">
-      <div className="chart-header">
-        <h3>Borrow Fee - {ticker}</h3>
-        <div className="chart-stats">
-          <div className="stat-item">
-            <span className="stat-label">Latest:</span>
-            <span className="stat-value">{latestFee?.toFixed(2)}%</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Avg:</span>
-            <span className="stat-value">{avgFee.toFixed(2)}%</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Min:</span>
-            <span className="stat-value">{minFee.toFixed(2)}%</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Max:</span>
-            <span className="stat-value">{maxFee.toFixed(2)}%</span>
-          </div>
+    <Card>
+      <Card.Header>
+        <div className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Borrow Fee - {ticker}</h5>
+          <Badge bg="secondary" className="fs-6">
+            {sortedData.length} data points
+          </Badge>
         </div>
-      </div>
-      <div className="chart-content">
-        <Line data={chartData} options={options} />
-      </div>
-    </div>
+      </Card.Header>
+      <Card.Body>
+        {/* Statistics Row */}
+        <Row className="mb-3">
+          <Col xs={6} sm={3}>
+            <div className="text-center">
+              <div className="h6 text-muted mb-1">Latest Close</div>
+              <div className="h5 text-primary mb-0">{latestFee?.toFixed(2)}%</div>
+            </div>
+          </Col>
+          <Col xs={6} sm={3}>
+            <div className="text-center">
+              <div className="h6 text-muted mb-1">Daily Avg</div>
+              <div className="h5 text-info mb-0">{avgFee.toFixed(2)}%</div>
+            </div>
+          </Col>
+          <Col xs={6} sm={3}>
+            <div className="text-center">
+              <div className="h6 text-muted mb-1">Period Low</div>
+              <div className="h5 text-success mb-0">{minFee.toFixed(2)}%</div>
+            </div>
+          </Col>
+          <Col xs={6} sm={3}>
+            <div className="text-center">
+              <div className="h6 text-muted mb-1">Period High</div>
+              <div className="h5 text-danger mb-0">{maxFee.toFixed(2)}%</div>
+            </div>
+          </Col>
+        </Row>
+
+        {/* Chart */}
+        <div style={{ height: '300px' }}>
+          <Line data={chartData} options={options} />
+        </div>
+      </Card.Body>
+    </Card>
   );
 };
 
 export default BorrowFeeChart;
-

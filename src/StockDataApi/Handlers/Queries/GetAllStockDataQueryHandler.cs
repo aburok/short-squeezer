@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -102,14 +103,14 @@ namespace StockDataApi.Handlers.Queries
                 .OrderBy(d => d.Date)
                 .Select(d => new ChartExchangeRedditMentionsDataDto
                 {
-                    Date = d.Date,
-                    Mentions = d.Mentions,
-                    SentimentScore = d.SentimentScore,
-                    SentimentLabel = d.SentimentLabel,
                     Subreddit = d.Subreddit,
-                    Upvotes = d.Upvotes,
-                    Comments = d.Comments,
-                    EngagementScore = d.EngagementScore
+                    Created = d.Created,
+                    Sentiment = d.Sentiment,
+                    Author = d.Author,
+                    Text = d.Text,
+                    Link = d.Link,
+                    ThingId = d.ThingId,
+                    ThingType = d.ThingType,
                 })
                 .ToArrayAsync(cancellationToken);
 
@@ -212,6 +213,26 @@ namespace StockDataApi.Handlers.Queries
                     Available = d.Available,
                     Fee = d.Fee,
                     Rebate = d.Rebate
+                })
+                .ToArrayAsync(cancellationToken);
+
+            // Daily aggregated borrow fee data (OHLC)
+            var borrowFeeDailyQuery = _context.ChartExchangeBorrowFeeDaily.Where(d => d.StockTickerSymbol == symbol);
+
+            chartExchangeData.BorrowFeeDailyData = await borrowFeeDailyQuery
+                .OrderBy(d => d.Date)
+                .Select(d => new ChartExchangeBorrowFeeDailyDataDto
+                {
+                    Date = d.Date,
+                    Open = d.Open,
+                    High = d.High,
+                    Low = d.Low,
+                    Close = d.Close,
+                    Average = d.Average,
+                    DataPointCount = d.DataPointCount,
+                    MaxAvailable = d.MaxAvailable,
+                    MinAvailable = d.MinAvailable,
+                    AverageAvailable = d.AverageAvailable
                 })
                 .ToArrayAsync(cancellationToken);
 

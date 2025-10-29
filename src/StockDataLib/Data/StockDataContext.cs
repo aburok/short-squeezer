@@ -20,6 +20,7 @@ namespace StockDataLib.Data
         public DbSet<ChartExchangeShortInterest> ChartExchangeShortInterest { get; set; }
         public DbSet<ChartExchangeShortVolume> ChartExchangeShortVolume { get; set; }
         public DbSet<ChartExchangeBorrowFee> ChartExchangeBorrowFee { get; set; }
+        public DbSet<ChartExchangeBorrowFeeDaily> ChartExchangeBorrowFeeDaily { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -74,6 +75,7 @@ namespace StockDataLib.Data
             ConfigureStockDataPoint<ChartExchangeShortInterest>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeShortVolume>(modelBuilder);
             ConfigureStockDataPoint<ChartExchangeBorrowFee>(modelBuilder);
+            ConfigureStockDataPoint<ChartExchangeBorrowFeeDaily>(modelBuilder);
 
             modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.FinraShortInterestData)
@@ -112,6 +114,11 @@ namespace StockDataLib.Data
 
             modelBuilder.Entity<StockTicker>()
                 .HasMany(s => s.ChartExchangeBorrowFee)
+                .WithOne(d => d.StockTicker)
+                .HasForeignKey(d => d.StockTickerSymbol);
+
+            modelBuilder.Entity<StockTicker>()
+                .HasMany(s => s.ChartExchangeBorrowFeeDaily)
                 .WithOne(d => d.StockTicker)
                 .HasForeignKey(d => d.StockTickerSymbol);
         }

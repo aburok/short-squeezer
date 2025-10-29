@@ -17,16 +17,13 @@ namespace StockDataApi.Handlers.Commands
     public class FetchChartExchangeDataCommandHandler
     {
         private readonly StockDataContext _context;
-        private readonly IChartExchangeService _chartExchangeService;
         private readonly ILogger<FetchChartExchangeDataCommandHandler> _logger;
 
         public FetchChartExchangeDataCommandHandler(
             StockDataContext context,
-            IChartExchangeService chartExchangeService,
             ILogger<FetchChartExchangeDataCommandHandler> logger)
         {
             _context = context;
-            _chartExchangeService = chartExchangeService;
             _logger = logger;
         }
 
@@ -63,132 +60,6 @@ namespace StockDataApi.Handlers.Commands
                     ShortInterest = new DataFetchResult(),
                     ShortVolume = new DataFetchResult()
                 };
-
-                // Fetch and store failure to deliver data
-                var failureToDeliverData = await _chartExchangeService.GetFailureToDeliverDataAsync(symbol, startDate, endDate);
-                if (failureToDeliverData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeFailureToDeliver
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newFailureToDeliverData = failureToDeliverData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newFailureToDeliverData.Any())
-                    {
-                        _context.ChartExchangeFailureToDeliver.AddRange(newFailureToDeliverData);
-                        result.FailureToDeliver.Fetched = newFailureToDeliverData.Count;
-                    }
-                    else
-                    {
-                        result.FailureToDeliver.Skipped = true;
-                    }
-                }
-
-                // Fetch and store Reddit mentions data
-                var redditMentionsData = await _chartExchangeService.GetRedditMentionsDataAsync(symbol, startDate, endDate);
-                if (redditMentionsData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeRedditMentions
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newRedditMentionsData = redditMentionsData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newRedditMentionsData.Any())
-                    {
-                        _context.ChartExchangeRedditMentions.AddRange(newRedditMentionsData);
-                        result.RedditMentions.Fetched = newRedditMentionsData.Count;
-                    }
-                    else
-                    {
-                        result.RedditMentions.Skipped = true;
-                    }
-                }
-
-                // Fetch and store stock split data
-                var stockSplitData = await _chartExchangeService.GetStockSplitDataAsync(symbol, startDate, endDate);
-                if (stockSplitData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeStockSplit
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newStockSplitData = stockSplitData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newStockSplitData.Any())
-                    {
-                        _context.ChartExchangeStockSplit.AddRange(newStockSplitData);
-                        result.StockSplits.Fetched = newStockSplitData.Count;
-                    }
-                    else
-                    {
-                        result.StockSplits.Skipped = true;
-                    }
-                }
-
-                // Fetch and store short interest data
-                var shortInterestData = await _chartExchangeService.GetShortInterestDataAsync(symbol, startDate, endDate);
-                if (shortInterestData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeShortInterest
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newShortInterestData = shortInterestData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newShortInterestData.Any())
-                    {
-                        _context.ChartExchangeShortInterest.AddRange(newShortInterestData);
-                        result.ShortInterest.Fetched = newShortInterestData.Count;
-                    }
-                    else
-                    {
-                        result.ShortInterest.Skipped = true;
-                    }
-                }
-
-                // Fetch and store short volume data
-                var shortVolumeData = await _chartExchangeService.GetShortVolumeDataAsync(symbol, startDate, endDate);
-                if (shortVolumeData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeShortVolume
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newShortVolumeData = shortVolumeData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newShortVolumeData.Any())
-                    {
-                        _context.ChartExchangeShortVolume.AddRange(newShortVolumeData);
-                        result.ShortVolume.Fetched = newShortVolumeData.Count;
-                    }
-                    else
-                    {
-                        result.ShortVolume.Skipped = true;
-                    }
-                }
-
-                // Fetch and store borrow fee data
-                var borrowFeeData = await _chartExchangeService.GetBorrowFeeDataAsync(symbol, startDate, endDate);
-                if (borrowFeeData.Any())
-                {
-                    var existingDates = await _context.ChartExchangeBorrowFee
-                        .Where(d => d.StockTickerSymbol == symbol)
-                        .Select(d => d.Date.Date)
-                        .ToListAsync(cancellationToken);
-
-                    var newBorrowFeeData = borrowFeeData.Where(d => !existingDates.Contains(d.Date.Date)).ToList();
-                    if (newBorrowFeeData.Any())
-                    {
-                        _context.ChartExchangeBorrowFee.AddRange(newBorrowFeeData);
-                        result.BorrowFee.Fetched = newBorrowFeeData.Count;
-                    }
-                    else
-                    {
-                        result.BorrowFee.Skipped = true;
-                    }
-                }
 
                 await _context.SaveChangesAsync(cancellationToken);
 

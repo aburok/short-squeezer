@@ -1,0 +1,25 @@
+using StockDataLib.Models;
+
+namespace StockData.ChartExchange.DataModels;
+
+/// <summary>
+/// Represents Reddit mentions data stored in the database from ChartExchange
+/// </summary>
+public class ChartExchangeRedditMentions : StockDataPoint
+{
+    public string Subreddit { get; set; }
+
+    public DateTimeOffset Created { get; set; }
+
+    public decimal? Sentiment { get; set; }
+    
+    public string? ThingId { get; set; }
+    
+    public string? ThingType { get; set; }
+
+    public string? Author { get; set; }
+    
+    public string? Text { get; set; }
+
+    public string? Link { get; set; }
+}

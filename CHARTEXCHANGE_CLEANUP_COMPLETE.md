@@ -33,3 +33,4 @@ ChartExchange service now **ONLY** handles borrow fee data. All short interest a
 
 The service is now simplified and focused solely on borrow fee data from ChartExchange.
 
+

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using StockData.ChartExchange;
 using StockDataLib.Data;
 using StockDataLib.Services;
 using StockDataWorker.Services;
@@ -55,7 +56,6 @@ namespace StockDataWorker
                         ));
                     
                     // Add services
-                    services.AddScoped<IChartExchangeService, ChartExchangeService>();
                     services.AddScoped<ITickerService, TickerService>();
                     services.AddScoped<IFinraService, FinraService>();
                     

@@ -60,7 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker }) => {
 
       // Use the unified StockData endpoint to get all ChartExchange data
       const stockDataResponse = await fetch(
-        `/api/StockData/${selectedTicker}?includeChartExchange=true&includeBorrowFee=true&includeFinra=false`
+        `/api/StockData/${selectedTicker}?includeChartExchange=true&includeFinra=false`
       );
 
       if (!stockDataResponse.ok) {
@@ -70,18 +70,24 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker }) => {
       const stockData = await stockDataResponse.json();
       console.log('Stock Data Response:', stockData);
 
-      // Extract borrow fee data
-      if (stockData.borrowFeeData && Array.isArray(stockData.borrowFeeData)) {
-        const transformedBorrowFeeData = stockData.borrowFeeData.map((item: any) => ({
+      // Extract daily aggregated borrow fee data from ChartExchange data
+      if (stockData.chartExchangeData?.borrowFeeDailyData && Array.isArray(stockData.chartExchangeData.borrowFeeDailyData)) {
+        const transformedBorrowFeeData = stockData.chartExchangeData.borrowFeeDailyData.map((item: any) => ({
           date: item.date || item.Date,
-          fee: Number(item.fee || item.Fee || 0),
-          availableShares: item.availableShares || item.AvailableShares
+          fee: Number(item.close || item.Close || 0), // Use close price for the main chart
+          availableShares: item.averageAvailable || item.AverageAvailable,
+          open: Number(item.open || item.Open || 0),
+          high: Number(item.high || item.High || 0),
+          low: Number(item.low || item.Low || 0),
+          close: Number(item.close || item.Close || 0),
+          average: Number(item.average || item.Average || 0),
+          dataPointCount: Number(item.dataPointCount || item.DataPointCount || 0)
         }));
         setAllBorrowFeeData(transformedBorrowFeeData);
-        console.log('Borrow Fee Data:', transformedBorrowFeeData);
+        console.log('Daily Borrow Fee Data:', transformedBorrowFeeData);
       } else {
         setAllBorrowFeeData([]);
-        console.log('No borrow fee data found');
+        console.log('No daily borrow fee data found');
       }
 
       // Extract ChartExchange short interest data
@@ -234,18 +240,11 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedTicker }) => {
           {!isLoading && (
             <Row className="mb-4">
               <Col md={6}>
-                <Card>
-                  <Card.Header>
-                    <h5 className="mb-0">Borrow Fee - {selectedTicker}</h5>
-                  </Card.Header>
-                  <Card.Body>
-                    <BorrowFeeChart
-                      data={borrowFeeData}
-                      ticker={selectedTicker}
-                      isLoading={isLoading}
-                    />
-                  </Card.Body>
-                </Card>
+                <BorrowFeeChart
+                  data={borrowFeeData}
+                  ticker={selectedTicker}
+                  isLoading={isLoading}
+                />
               </Col>
             </Row>
           )}

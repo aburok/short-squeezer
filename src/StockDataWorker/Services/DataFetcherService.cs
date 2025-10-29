@@ -18,20 +18,17 @@ namespace StockDataWorker.Services
         private readonly ILogger<DataFetcherService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly DataFetcherOptions _options;
-        private readonly IChartExchangeService _chartExchangeService;
         private readonly IFinraService _finraService;
 
         public DataFetcherService(
             ILogger<DataFetcherService> logger,
             IServiceProvider serviceProvider,
             IOptions<DataFetcherOptions> options,
-            IChartExchangeService chartExchangeService,
             IFinraService finraService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
             _options = options.Value;
-            _chartExchangeService = chartExchangeService;
             _finraService = finraService;
         }
 
